@@ -1,0 +1,53 @@
+{
+  "project": "TaskPebble",
+  "claims": [
+    {
+      "id": "claim-001",
+      "text": "TaskPebble stores tasks in a local JSON file.",
+      "evidence": [
+        {
+          "path": "examples/taskpebble/evidence.md",
+          "start_line": 7,
+          "end_line": 7,
+          "quote": "TaskPebble stores tasks in a local JSON file."
+        }
+      ]
+    },
+    {
+      "id": "claim-002",
+      "text": "Each TaskPebble task has a title and a completed boolean.",
+      "evidence": [
+        {
+          "path": "examples/taskpebble/evidence.md",
+          "start_line": 8,
+          "end_line": 8,
+          "quote": "Each task has a title and a completed boolean."
+        }
+      ]
+    },
+    {
+      "id": "claim-003",
+      "text": "TaskPebble lists tasks in creation order.",
+      "evidence": [
+        {
+          "path": "examples/taskpebble/evidence.md",
+          "start_line": 9,
+          "end_line": 9,
+          "quote": "The command `python taskpebble.py list` prints all tasks in creation order."
+        }
+      ]
+    },
+    {
+      "id": "claim-004",
+      "text": "TaskPebble can mark a selected task complete by number.",
+      "evidence": [
+        {
+          "path": "examples/taskpebble/evidence.md",
+          "start_line": 10,
+          "end_line": 10,
+          "quote": "The command `python taskpebble.py complete <number>` marks the selected task complete."
+        }
+      ]
+    }
+  ]
+}
