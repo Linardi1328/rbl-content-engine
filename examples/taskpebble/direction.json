@@ -1,0 +1,49 @@
+{
+  "project": "TaskPebble",
+  "objective": "Turn verified TaskPebble facts into platform-native content drafts for a technical personal brand without adding unsupported project claims.",
+  "audience_hypothesis": [
+    "software developers",
+    "computer science students",
+    "technical recruiters",
+    "technical founders and builders",
+    "people interested in practical software and AI projects"
+  ],
+  "creative_direction": {
+    "voice": "clear, curious, confident, and understated",
+    "story_priority": "Lead with a relatable problem or payoff rather than a project-name introduction.",
+    "proof_priority": "Show or reference evidence-backed implementation details when useful.",
+    "style_notes": [
+      "Avoid corporate marketing language.",
+      "Avoid fake urgency, fake controversy, and guaranteed-performance language.",
+      "Prefer a concrete problem, build decision, failure, demonstration, or payoff over a generic feature list.",
+      "Creative direction may change pacing, framing, visuals, hook, and ordering but must not alter the meaning of verified project claims."
+    ]
+  },
+  "targets": [
+    {
+      "platform": "youtube",
+      "format": "long_form",
+      "enabled": true,
+      "desired_output": "concept, title options, hook, and concise outline"
+    },
+    {
+      "platform": "youtube",
+      "format": "shorts",
+      "enabled": true,
+      "desired_output": "short-form script and storyboard"
+    },
+    {
+      "platform": "instagram",
+      "format": "reels",
+      "enabled": true,
+      "desired_output": "short-form script and storyboard"
+    },
+    {
+      "platform": "tiktok",
+      "format": "vertical_video",
+      "enabled": true,
+      "desired_output": "short-form script and storyboard"
+    }
+  ],
+  "approval_status": "PENDING_HUMAN"
+}
