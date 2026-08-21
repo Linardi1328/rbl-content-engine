@@ -1,0 +1,226 @@
+{
+  "snapshot_version": 1,
+  "research_date": "2026-08-21",
+  "region": "global",
+  "niche": "software, AI, build-in-public, and technical personal-brand content",
+  "purpose": "Provide dated, source-backed platform strategy inputs for the Phase 0 manual Content Director. This snapshot is strategic guidance, not a guarantee of reach or views.",
+  "rules": [
+    "Platform research may influence packaging, hook, pacing, format, and creative treatment only.",
+    "Platform research must never be used as evidence for factual project claims.",
+    "Do not state or imply guaranteed views, virality, reach, or algorithmic preference.",
+    "A human may override any strategy recommendation before approval.",
+    "The Phase 0 runtime reads this checked-in snapshot locally and performs no network research."
+  ],
+  "platforms": {
+    "youtube": {
+      "audience_intent": [
+        "learn or solve a problem",
+        "be entertained by a clear story or experiment",
+        "go deeper on a topic or creator",
+        "discover useful content through search and recommendations"
+      ],
+      "current_distribution_signals": [
+        "Recommendation performance can be reasoned about through appeal, engagement, and satisfaction.",
+        "Titles and thumbnails are important packaging for long-form videos.",
+        "The opening should quickly deliver on the title/thumbnail promise and sustain viewer interest.",
+        "Shorts are ranked by viewer personalization and performance rather than by a single favored format.",
+        "Long-form and Shorts audiences can overlap, but viewer preferences also vary by format."
+      ],
+      "recommended_archetypes": [
+        "build story",
+        "experiment or challenge",
+        "failure or postmortem",
+        "technical deep dive",
+        "comparison",
+        "problem-to-solution demonstration"
+      ],
+      "rbl_treatments": {
+        "long_form": {
+          "goal": "watch time, authority, returning viewers, and deeper project understanding",
+          "default_shape": "problem-first title/thumbnail promise -> immediate hook -> story/experiment -> technical proof -> result -> lessons",
+          "duration_guidance": "Use the shortest length that delivers the story and value without filler; do not hard-code an algorithmic ideal length."
+        },
+        "shorts": {
+          "goal": "discovery and a self-contained payoff",
+          "default_shape": "immediate curiosity/problem -> one core proof/demo -> payoff -> optional bridge to deeper content",
+          "duration_guidance": "Keep it concise enough to preserve retention; choose length from the content rather than a fixed algorithm myth."
+        }
+      },
+      "avoid": [
+        "corporate project-overview openings",
+        "slow logo or branding intros before value",
+        "stretching runtime with filler",
+        "assuming one format is algorithmically favored",
+        "treating a Short as only a cropped excerpt with no self-contained value"
+      ],
+      "sources": [
+        {
+          "title": "YouTube's Recommendation System",
+          "publisher": "YouTube Help",
+          "url": "https://support.google.com/youtube/answer/16533387?hl=en",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "audience-first recommendations",
+            "viewer personalization",
+            "content performance and satisfaction"
+          ]
+        },
+        {
+          "title": "Understand your content performance for YouTube's recommendation system",
+          "publisher": "YouTube Help",
+          "url": "https://support.google.com/youtube/answer/16559650?hl=en",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "appeal, engagement, and satisfaction",
+            "problem-led ideation",
+            "title/thumbnail packaging",
+            "strong opening and retention"
+          ]
+        },
+        {
+          "title": "Search & discovery tips - Shorts",
+          "publisher": "YouTube Help",
+          "url": "https://support.google.com/youtube/answer/11914225?co=YOUTUBE._YTVideoType%3Dshorts&hl=en",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "Shorts are not ranked by a single favored format",
+            "viewer personalization",
+            "view choice, duration, percentage viewed, and satisfaction signals"
+          ]
+        }
+      ]
+    },
+    "instagram": {
+      "audience_intent": [
+        "discover visually compelling or useful short-form content",
+        "share content privately with friends",
+        "save useful or identity-relevant ideas",
+        "discover creators beyond the accounts they already follow"
+      ],
+      "current_distribution_signals": [
+        "Instagram increased the prevalence of original content in US recommendations, reaching 75% of recommendations from original posts in Q4 2025.",
+        "Reels and messaging are major discovery and sharing surfaces; Meta reports Reels are reshared more than 4.5 billion times per day across its platforms.",
+        "Trial Reels allow creators to test a Reel with non-followers before deciding whether to share more broadly.",
+        "Meta reports that among creators who posted more often after trying Trial Reels, many saw increased non-follower reach."
+      ],
+      "recommended_archetypes": [
+        "polished project reveal",
+        "before-and-after transformation",
+        "concise technical lesson",
+        "visual product or workflow demonstration",
+        "builder story with a clear visual payoff",
+        "shareable mistake or lesson learned"
+      ],
+      "rbl_treatments": {
+        "reels": {
+          "goal": "shares, saves, non-follower discovery, and profile interest",
+          "default_shape": "strong first-frame promise -> visually legible problem -> proof/demo -> clear payoff",
+          "creative_guidance": "Prioritize original RBL footage/screens/screenshots, readable text, clean visual hierarchy, and a reason someone would send or save the Reel."
+        }
+      },
+      "avoid": [
+        "generic product-ad language",
+        "reposted or minimally transformed content",
+        "dense technical explanation without visual hierarchy",
+        "a first frame that does not communicate the value or curiosity gap"
+      ],
+      "sources": [
+        {
+          "title": "2026: AI Drives Performance",
+          "publisher": "Meta Newsroom",
+          "url": "https://about.fb.com/news/2026/01/2026-ai-drives-performance/",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "increase in original Instagram recommendation prevalence",
+            "75% of US Instagram recommendations from original posts in Q4 2025"
+          ]
+        },
+        {
+          "title": "In India, Instagram debuts a Reels-first experience for its mobile app",
+          "publisher": "Meta Newsroom",
+          "url": "https://about.fb.com/news/2025/09/in-india-instagram-debuts-a-reels-first-experience-for-its-mobile-app/",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "Reels and DMs as important connection surfaces",
+            "more than 4.5 billion Reels reshares per day across Meta platforms"
+          ]
+        },
+        {
+          "title": "Inspiring Creativity That Brings People Together",
+          "publisher": "Meta Newsroom",
+          "url": "https://about.fb.com/news/2025/06/inspiring-creativity-that-brings-people-together/",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "Trial Reels availability",
+            "testing content with non-followers",
+            "reported non-follower reach results"
+          ]
+        }
+      ]
+    },
+    "tiktok": {
+      "audience_intent": [
+        "be entertained quickly",
+        "follow curiosity into a topic or niche",
+        "see authentic process and behind-the-scenes stories",
+        "participate through comments, reactions, and community language",
+        "search for practical or unexpected answers"
+      ],
+      "current_distribution_signals": [
+        "TikTok's 2026 Reali-Tea signal emphasizes honesty, community, shared experience, unfiltered stories, and behind-the-scenes process over curated perfection.",
+        "The 2026 Curiosity Detours signal emphasizes discovery journeys, search, adjacent interests, and small interest-driven communities.",
+        "TikTok explicitly recommends treating comments and community participation as part of the creative surface.",
+        "The 2026 trend material highlights #joblife and real working/process stories as examples of grounded content."
+      ],
+      "recommended_archetypes": [
+        "raw builder story",
+        "failure or unexpected problem",
+        "quick proof/demo",
+        "behind-the-scenes process",
+        "strong technical opinion with evidence",
+        "comment-response or community-led follow-up",
+        "searchable curiosity hook"
+      ],
+      "rbl_treatments": {
+        "vertical_video": {
+          "goal": "curiosity, completion, conversation, search discovery, and community connection",
+          "default_shape": "conversational first-sentence hook -> real problem/process -> proof/demo -> satisfying result or open loop",
+          "creative_guidance": "Prefer natural language, real process, screen/camera proof, and searchable phrasing over corporate polish."
+        }
+      },
+      "avoid": [
+        "corporate product intros",
+        "overly curated ad-style storytelling when a real process story exists",
+        "generic trend-chasing unrelated to the project or audience",
+        "empty engagement bait",
+        "claims of guaranteed virality from using a trend"
+      ],
+      "sources": [
+        {
+          "title": "TikTok Next 2026 Trend Forecast",
+          "publisher": "TikTok for Business",
+          "url": "https://ads.tiktok.com/business/en-US/next",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "Irreplaceable Instinct",
+            "Reali-Tea",
+            "Curiosity Detours",
+            "real process over curated perfection",
+            "comments as a creative surface",
+            "interest-driven communities and discovery"
+          ]
+        },
+        {
+          "title": "About TikTok Next 2026",
+          "publisher": "TikTok for Business",
+          "url": "https://ads.tiktok.com/business/en/next/about",
+          "accessed_on": "2026-08-21",
+          "supports": [
+            "methodology and role of real-time trend data",
+            "using market and organic conversation insights to understand current culture"
+          ]
+        }
+      ]
+    }
+  }
+}
