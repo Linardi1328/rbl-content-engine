@@ -65,6 +65,23 @@ Platform research is not evidence for project facts. Never use a market trend or
 - No network requirement for the Phase 0 demo or tests.
 - The Phase 0 runner must not perform live trend research; it consumes a checked-in/manual local snapshot.
 
+## Future video-production budget guardrail
+
+This section applies when paid video generation is introduced in a later phase. It does **not** authorize paid calls in Phase 0.
+
+- Design the early Video Production Agent around a **US$60/month target operating budget**.
+- Treat **US$100/month as the normal prototype cap**.
+- Treat **US$150/month as the absolute prototype ceiling** unless the human owner explicitly changes the budget.
+- Prefer existing real footage, project UI, screen recordings, reusable B-roll, screenshots, and local motion graphics before generating new AI video.
+- Use AI video only where it materially improves the shot or cannot reasonably be produced from existing/local assets.
+- Prefer lower-cost generation models for drafts and ordinary shots; reserve premium models for clearly justified hero shots.
+- Premium generation must have an explicit reason and estimated cost before use.
+- As an initial planning default, target no more than roughly **10 seconds of AI-generated footage per finished short-form video** unless a human deliberately overrides it.
+- Track estimated and actual spend per generation, per finished video, and per month.
+- Re-renders and failed generations count against the same budget; do not treat retries as free.
+- Optimize for useful content output and learning per dollar, not maximum synthetic-video quality.
+- Never let model routing automatically exceed the configured monthly or per-video budget ceiling.
+
 ## Engineering defaults
 
 - Python 3.11+.
