@@ -27,6 +27,26 @@ Official source inspected:
 
 Do not promote an entry to `VERIFIED_LIVE` based only on this document, memory, or public docs.
 
+## Verified live findings — 2026-09-06 Phase 1D
+
+Live environment: Codex desktop with Topview MCP/plugin `topview@topview` version `1.0.1`.
+
+Scope verified: non-chargeable discovery, preflight, Canvas access, generation-configuration inspection, metadata-only reference registration, and local reference locking. No image generation, video generation, video editing, timeline mutation, export, publishing, or other paid generation was submitted.
+
+Safe live capabilities observed:
+
+- Account/authentication reads: `topview_get_credit`, `topview_get_mcp_free_quota`.
+- Canvas access reads: `list_topview_canvases`, `get_topview_canvas_metadata`, `get_topview_canvas_state`, `get_topview_canvas_timeline`.
+- Canvas asset registration: `create_topview_canvas_asset_node` for `assetKind=product` and `assetKind=style`, followed by `get_topview_canvas_node_details`.
+- Canvas generation-configuration inspection: `get_topview_canvas_generation_capabilities` with slim output for image and video task types. This inspection did not authorize or submit generation.
+- Task monitoring schema: `refresh_topview_canvas_generation_task` is exposed for Canvas-owned generation tasks, but no task was created in the Phase 1D pilot.
+
+Reference registration note: the live Canvas asset-node operation returned a Canvas `nodeId` with optional `shortCode` / `mentionToken`; it did not return a separate backend `assetId`. For Phase 1D, the local reference registry records the observed Canvas `nodeId` as the remote identifier. Do not commit live node IDs or Canvas IDs to tracked repository files.
+
+Pilot limitation: the Phase 1D synthetic reference pilot used `.txt` metadata fixtures represented as Canvas asset cards. This validates reference-registration and cryptographic locking machinery only; it does not validate real media upload or production-authoritative visual reference behavior.
+
+Unavailable route observed: Canvas-owned `omni_reference` was not returned by live Canvas generation-capability discovery in this session. Do not work around that gap with standalone generation or guessed routes.
+
 ## Upstream factual boundary
 
 ProofLab is not a Topview tool and must never be replaced by one. Before factual project content reaches this tool-routing layer, it must pass the local RBL verification contract:
