@@ -43,7 +43,7 @@ No image generation, video generation, Seedance generation, targeted edit, timel
 Run:
 
 ```bash
-PYTHONPATH=src python3 -m rbl_content_engine.topview inspect-media-reference \
+PYTHONPATH=src python3 -m rbl_content_engine.topview.media_cli \
   --workspace-root . \
   --path examples/topview/reference-pilot/ref-media.png
 ```
