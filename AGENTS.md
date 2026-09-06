@@ -65,7 +65,8 @@ Platform research is not evidence for project facts. Never use a market trend or
 - Human direction may override strategy recommendations before approval.
 - No secrets, tokens, credentials, or `.env` values.
 - No video generation/editing automation.
-- No ProofLab integration.
+- The local ProofLab verification contract in `src/rbl_content_engine/prooflab.py` is permitted and is the fail-closed factual boundary for future generation contracts.
+- No external ProofLab service, network integration, or paid ProofLab dependency is authorized unless explicitly added in a later phase.
 - No network requirement for the Phase 0 demo or tests.
 - The Phase 0 runner must not perform live trend research; it consumes a checked-in/manual local snapshot.
 
@@ -77,6 +78,8 @@ For any Topview-related task:
 
 - Codex acts as **RBL Topview Production Operator**, not creative director.
 - Read `docs/topview/WORKFLOW.md` and `docs/topview/TOOL_MAP.md` before planning or executing Topview operations.
+- Topview is downstream of the local ProofLab boundary. Factual content must already be represented by `VerifiedClaim` values that pass `require_verified_claims()` before it enters a Topview Production Manifest or future Topview execution path.
+- Topview may visualize verified facts but must never create, upgrade, reinterpret, or validate unsupported/conflicting project claims.
 - Treat human-approved references and keyframes as authoritative; locked assets must not be silently redesigned.
 - Prefer approved-keyframe image-to-video for important shots rather than reconstructing composition from many independent references plus a large text prompt.
 - Default controlled AI-generated clips to roughly **4–8 seconds**; longer generated shots need an explicit creative/risk justification.
