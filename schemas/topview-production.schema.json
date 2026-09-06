@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://rbl.local/schemas/topview-production.schema.json",
   "title": "RBL Topview Production Manifest",
-  "description": "Machine-readable production contract between RBL creative decisions and a future Codex + Topview production operator.",
+  "description": "Machine-readable production contract between ProofLab-verified RBL creative decisions and a future Codex + Topview production operator.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schema_version",
     "project",
+    "verification_boundary",
     "budget_policy",
     "approval_gates",
     "references",
@@ -18,7 +19,7 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "const": "0.1.0"
+      "const": "0.2.0"
     },
     "project": {
       "type": "object",
@@ -37,6 +38,30 @@
         },
         "runtime_target_seconds": {"type": "number", "exclusiveMinimum": 0},
         "content_lineage": {"$ref": "#/$defs/contentLineage"}
+      }
+    },
+    "verification_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "gate", "policy", "verified_claim_ids"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "rbl_content_engine.prooflab"
+        },
+        "gate": {
+          "type": "string",
+          "const": "require_verified_claims"
+        },
+        "policy": {
+          "type": "string",
+          "const": "FAIL_CLOSED"
+        },
+        "verified_claim_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
       }
     },
     "budget_policy": {
@@ -110,20 +135,50 @@
   },
   "$defs": {
     "contentLineage": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "claim_ids": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {"type": "string"}
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["verification_status", "claim_ids", "evidence_refs"],
+          "properties": {
+            "verification_status": {
+              "type": "string",
+              "const": "VERIFIED"
+            },
+            "claim_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "evidence_refs": {
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
         },
-        "evidence_refs": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {"type": "string"}
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["verification_status", "claim_ids", "evidence_refs"],
+          "properties": {
+            "verification_status": {
+              "type": "string",
+              "const": "NOT_APPLICABLE"
+            },
+            "claim_ids": {
+              "type": "array",
+              "maxItems": 0
+            },
+            "evidence_refs": {
+              "type": "array",
+              "maxItems": 0
+            }
+          }
         }
-      }
+      ]
     },
     "reference": {
       "type": "object",
@@ -165,6 +220,7 @@
         "id",
         "purpose",
         "duration_seconds",
+        "content_lineage",
         "references",
         "generation",
         "storyboard",
@@ -315,6 +371,9 @@
         "required_checks": {
           "type": "array",
           "uniqueItems": true,
+          "minItems": 1,
+          "contains": {"const": "factual_lineage"},
+          "minContains": 1,
           "items": {
             "type": "string",
             "enum": [
