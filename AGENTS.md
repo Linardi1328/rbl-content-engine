@@ -70,6 +70,8 @@ Platform research is not evidence for project facts. Never use a market trend or
 - No network requirement for the Phase 0 demo or tests.
 - The Phase 0 runner must not perform live trend research; it consumes a checked-in/manual local snapshot.
 
+The local ProofLab contract does not expand Phase 0 into external ProofLab automation; it formalizes the existing local claim-verification boundary introduced on `main`.
+
 ## Topview production operator contract
 
 Phase 1 may define the future Topview production contract without enabling paid/video execution.
