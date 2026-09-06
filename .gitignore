@@ -18,3 +18,4 @@ examples/*/output/
 # Live Topview production metadata may contain remote project/task/asset identifiers.
 .production/topview-state.json
 .production/topview-capabilities.json
+.production/topview-references.json
