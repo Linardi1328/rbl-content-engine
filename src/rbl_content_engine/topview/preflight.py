@@ -55,11 +55,27 @@ def _capability_map(snapshot: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]
     return result
 
 
+def _generation_methods(manifest: Mapping[str, Any]) -> set[str]:
+    methods: set[str] = set()
+    scenes = manifest.get("scenes", [])
+    if not isinstance(scenes, list):
+        return methods
+    for scene in scenes:
+        if not isinstance(scene, Mapping):
+            continue
+        generation = scene.get("generation")
+        if isinstance(generation, Mapping):
+            method = generation.get("method")
+            if method in AI_GENERATION_METHODS:
+                methods.add(str(method))
+    return methods
+
+
 def _required_capabilities(manifest: Mapping[str, Any]) -> tuple[str, ...]:
     required = {"mcp_connectivity", "authentication"}
     scenes = manifest.get("scenes", [])
 
-    uses_topview_generation = False
+    generation_methods = _generation_methods(manifest)
     uses_references = False
     needs_image_generation = False
 
@@ -73,13 +89,6 @@ def _required_capabilities(manifest: Mapping[str, Any]) -> tuple[str, ...]:
         if isinstance(refs, list) and refs:
             uses_references = True
 
-        generation = scene.get("generation")
-        if isinstance(generation, Mapping):
-            method = generation.get("method")
-            if method in AI_GENERATION_METHODS:
-                uses_topview_generation = True
-                required.add(METHOD_CAPABILITY[str(method)])
-
         storyboard = scene.get("storyboard")
         if isinstance(storyboard, Mapping):
             if (
@@ -88,11 +97,14 @@ def _required_capabilities(manifest: Mapping[str, Any]) -> tuple[str, ...]:
             ):
                 needs_image_generation = True
 
+    for method in generation_methods:
+        required.add(METHOD_CAPABILITY[method])
+
     if uses_references:
         required.add("reference_access")
     if needs_image_generation:
         required.add("image_generation")
-    if uses_topview_generation:
+    if generation_methods:
         required.update(
             {
                 "canvas_access",
@@ -106,15 +118,15 @@ def _required_capabilities(manifest: Mapping[str, Any]) -> tuple[str, ...]:
 
 
 def _chargeable_required(manifest: Mapping[str, Any]) -> bool:
+    if _generation_methods(manifest):
+        return True
+
     scenes = manifest.get("scenes", [])
     if not isinstance(scenes, list):
         return False
     for scene in scenes:
         if not isinstance(scene, Mapping):
             continue
-        generation = scene.get("generation")
-        if isinstance(generation, Mapping) and generation.get("method") in AI_GENERATION_METHODS:
-            return True
         storyboard = scene.get("storyboard")
         if isinstance(storyboard, Mapping):
             if (
@@ -149,6 +161,28 @@ def _references_ready(manifest: Mapping[str, Any]) -> list[str]:
         if item.get("locked") is not True:
             blockers.append(f"reference {ref_id} is not locked")
     return blockers
+
+
+def _live_config_blockers(
+    manifest: Mapping[str, Any], capabilities: Mapping[str, Any]
+) -> list[str]:
+    methods = _generation_methods(manifest)
+    if not methods:
+        return []
+
+    configs = capabilities.get("generation_configs", [])
+    if not isinstance(configs, list):
+        return ["live generation_configs is not an array"]
+
+    configured_methods = {
+        str(item.get("task_type"))
+        for item in configs
+        if isinstance(item, Mapping) and item.get("task_type")
+    }
+    return [
+        f"no live generation configuration recorded for required task type {method}"
+        for method in sorted(methods.difference(configured_methods))
+    ]
 
 
 def evaluate_preflight(
@@ -206,6 +240,15 @@ def evaluate_preflight(
         elif status != "VERIFIED_LIVE":
             blockers.append(f"required capability {cap_id} is {status or 'UNKNOWN'}")
 
+    account = capabilities.get("account")
+    if "canvas_access" in required:
+        if not isinstance(account, Mapping) or account.get("canvas_access") is not True:
+            blockers.append("live account/Canvas access has not been positively verified")
+    if "canvas_ownership" in required:
+        if not isinstance(account, Mapping) or account.get("ownership_permission") is not True:
+            blockers.append("live Canvas ownership/mutation permission has not been positively verified")
+
+    blockers.extend(_live_config_blockers(manifest, capabilities))
     blockers.extend(_references_ready(manifest))
 
     if chargeable_required and not chargeable_operations_authorized:
