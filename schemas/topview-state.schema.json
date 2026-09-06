@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rbl.local/schemas/topview-state.schema.json",
+  "title": "RBL Topview Production State",
+  "description": "Local mutable execution state for resumable Codex + Topview production operations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "current_project",
+    "current_phase",
+    "preflight",
+    "canvas",
+    "references",
+    "style",
+    "environments",
+    "scenes",
+    "current_scene",
+    "approval_required",
+    "generated_tasks",
+    "approved_outputs",
+    "budget",
+    "last_updated_at"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "0.1.0"},
+    "current_project": {"type": ["string", "null"]},
+    "current_phase": {
+      "type": "string",
+      "enum": [
+        "PREFLIGHT",
+        "CANVAS_SETUP",
+        "REFERENCES",
+        "STYLE",
+        "ENVIRONMENTS",
+        "SCENECARDS",
+        "STORYBOARD_KEYFRAMES",
+        "DRAFT_720P",
+        "QC",
+        "TARGETED_EDIT_OR_REGENERATION",
+        "FINAL_1080P",
+        "TIMELINE_AUDIO",
+        "EXPORT",
+        "HUMAN_APPROVAL",
+        "COMPLETE",
+        "BLOCKED"
+      ]
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "mcp_connected", "authenticated", "canvas_access", "ownership_permission", "generation_config_checked", "budget_checked", "required_capabilities"],
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "mcp_connected": {"type": ["boolean", "null"]},
+        "authenticated": {"type": ["boolean", "null"]},
+        "account_hint": {"type": ["string", "null"]},
+        "canvas_access": {"type": ["boolean", "null"]},
+        "ownership_permission": {"type": ["boolean", "null"]},
+        "generation_config_checked": {"type": ["boolean", "null"]},
+        "budget_checked": {"type": ["boolean", "null"]},
+        "required_capabilities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["VERIFIED_LIVE", "OFFICIAL_DOC", "HACKATHON_OBSERVED", "UNVERIFIED", "MANUAL_REQUIRED", "UNAVAILABLE"]
+          }
+        },
+        "mcp_version": {"type": ["string", "null"]},
+        "checked_at": {"type": ["string", "null"], "format": "date-time"},
+        "blocking_reason": {"type": ["string", "null"]}
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status"],
+      "properties": {
+        "id": {"type": ["string", "null"]},
+        "name": {"type": ["string", "null"]},
+        "status": {"$ref": "#/$defs/status"}
+      }
+    },
+    "references": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/referenceState"}
+    },
+    "style": {"$ref": "#/$defs/simpleState"},
+    "environments": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/simpleState"}
+    },
+    "scenes": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/sceneState"}
+    },
+    "current_scene": {"type": ["string", "null"]},
+    "approval_required": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "PREFLIGHT_CONFIRMATION",
+        "REFERENCE_APPROVAL",
+        "STORYBOARD_KEYFRAME_APPROVAL",
+        "DRAFT_720P_APPROVAL",
+        "FINAL_1080P_APPROVAL",
+        "TIMELINE_APPROVAL",
+        "EXPORT_PUBLICATION_APPROVAL"
+      ]
+    },
+    "generated_tasks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/taskState"}
+    },
+    "approved_outputs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/outputState"}
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_monthly_usd", "normal_cap_usd", "absolute_ceiling_usd", "estimated_project_spend_usd", "actual_project_spend_usd"],
+      "properties": {
+        "target_monthly_usd": {"type": "number", "minimum": 0, "maximum": 60},
+        "normal_cap_usd": {"type": "number", "minimum": 0, "maximum": 100},
+        "absolute_ceiling_usd": {"type": "number", "minimum": 0, "maximum": 150},
+        "estimated_project_spend_usd": {"type": "number", "minimum": 0},
+        "actual_project_spend_usd": {"type": "number", "minimum": 0},
+        "currency": {"type": "string", "const": "USD"}
+      }
+    },
+    "recovery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "last_failure_level": {"type": ["integer", "null"], "minimum": 1, "maximum": 6},
+        "last_failure_reason": {"type": ["string", "null"]},
+        "recommended_action": {"type": ["string", "null"]}
+      }
+    },
+    "resume_hint": {"type": ["string", "null"]},
+    "last_updated_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": ["NOT_STARTED", "IN_PROGRESS", "READY", "APPROVAL_REQUIRED", "APPROVED", "REJECTED", "BLOCKED", "COMPLETE"]
+    },
+    "simpleState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "remote_id": {"type": ["string", "null"]},
+        "approved": {"type": ["boolean", "null"]},
+        "locked": {"type": ["boolean", "null"]}
+      }
+    },
+    "referenceState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "remote_asset_id", "approved", "locked"],
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "remote_asset_id": {"type": ["string", "null"]},
+        "approved": {"type": ["boolean", "null"]},
+        "locked": {"type": ["boolean", "null"]}
+      }
+    },
+    "sceneState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "storyboard", "draft_720p", "qc", "final_1080p"],
+      "properties": {
+        "status": {"$ref": "#/$defs/status"},
+        "storyboard": {"$ref": "#/$defs/simpleState"},
+        "draft_720p": {"$ref": "#/$defs/simpleState"},
+        "qc": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "disposition"],
+          "properties": {
+            "status": {"$ref": "#/$defs/status"},
+            "disposition": {
+              "type": ["string", "null"],
+              "enum": [null, "KEEP", "FIX", "REJECT"]
+            },
+            "failure_level": {"type": ["integer", "null"], "minimum": 1, "maximum": 6},
+            "notes": {"type": ["string", "null"]}
+          }
+        },
+        "final_1080p": {"$ref": "#/$defs/simpleState"},
+        "resolved_model": {"type": ["string", "null"]},
+        "resolved_task_type": {"type": ["string", "null"]}
+      }
+    },
+    "taskState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "task_type", "scene_id", "status"],
+      "properties": {
+        "task_id": {"type": "string", "minLength": 1},
+        "task_type": {"type": "string", "minLength": 1},
+        "scene_id": {"type": ["string", "null"]},
+        "model": {"type": ["string", "null"]},
+        "status": {"type": "string", "enum": ["INIT", "RUNNING", "SUCCESS", "FAIL", "UNKNOWN"]},
+        "estimated_cost_usd": {"type": ["number", "null"], "minimum": 0},
+        "actual_cost_usd": {"type": ["number", "null"], "minimum": 0},
+        "output_id": {"type": ["string", "null"]}
+      }
+    },
+    "outputState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["output_id", "kind", "scene_id"],
+      "properties": {
+        "output_id": {"type": "string", "minLength": 1},
+        "kind": {"type": "string", "enum": ["REFERENCE", "KEYFRAME", "DRAFT_VIDEO", "FINAL_VIDEO", "TIMELINE", "EXPORT"]},
+        "scene_id": {"type": ["string", "null"]},
+        "approved_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}
