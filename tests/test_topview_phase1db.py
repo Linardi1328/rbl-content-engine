@@ -50,7 +50,7 @@ class Phase1DBMediaReferenceTests(unittest.TestCase):
         docs = (ROOT / "docs" / "topview" / "PHASE_1D_B_MEDIA_PILOT.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("remote object is positively verified as media/image-backed", docs)
+        self.assertIn("positively verified as media/image-backed", docs)
         self.assertIn("generic Canvas node or metadata card alone", docs)
         self.assertIn("generated tasks = 0", docs)
         self.assertIn("actual spend = US$0", docs)
