@@ -47,6 +47,36 @@ Pilot limitation: the Phase 1D synthetic reference pilot used `.txt` metadata fi
 
 Unavailable route observed: Canvas-owned `omni_reference` was not returned by live Canvas generation-capability discovery in this session. Do not work around that gap with standalone generation or guessed routes.
 
+## Verified live findings — 2026-09-06/07 Phase 1D-B
+
+Live environment: same Codex desktop Topview MCP/plugin `topview@topview` version `1.0.1`.
+
+Scope verified: non-chargeable real PNG reference upload, Canvas media-node creation, Canvas media readback, explicit local human approval, and cryptographic reference locking. No image generation, video generation, Seedance, video editing, timeline mutation, export, publishing, or other paid generation was submitted.
+
+Safe live media path observed:
+
+```text
+prepare_topview_canvas_media_upload
+-> HTTP PUT actual PNG bytes to the returned short-lived upload target
+-> create_topview_canvas_media_node
+-> get_topview_canvas_node_details
+```
+
+`prepare_topview_canvas_media_upload` returned a short-lived `uploadUrl`, `requiredHeaders`, durable `objectKey`, `mediaType`, and `mimeType`. The upload URL must not be persisted, committed, or repeated in reports. The local operator must PUT the actual media bytes with the returned headers and require an HTTP 2xx result before creating the media node.
+
+`create_topview_canvas_media_node` returned a Canvas `nodeId` plus image short code/mention metadata. It did not return a separate backend asset ID. For real-media reference pilots, a Canvas `nodeId` may be recorded as the RBL remote reference identifier only after `get_topview_canvas_node_details` proves that exact node is media-backed.
+
+Observed media readback fields that established image/media semantics included:
+
+- node `type = image`;
+- `data.mediaRef.storage = s3`;
+- `data.mediaRef.objectKey` present;
+- `data.mediaRef.mimeType = image/png`;
+- image short code present;
+- Canvas node geometry `width` and `height` present.
+
+The Phase 1D-B pilot used a checked-in synthetic PNG fixture. Local source format, MIME type, byte dimensions, and SHA-256 remain owned by the local media inspector and reference registry; Canvas geometry dimensions are useful readback evidence but should not replace local byte inspection.
+
 ## Upstream factual boundary
 
 ProofLab is not a Topview tool and must never be replaced by one. Before factual project content reaches this tool-routing layer, it must pass the local RBL verification contract:
@@ -73,6 +103,7 @@ VerifiedClaim
 | Check credits | PREFLIGHT / budget | `topview_get_credit` | `OFFICIAL_DOC` | No | No | Use before chargeable production when balance matters. |
 | Inspect credit logs | budget audit | `topview_list_credit_logs` | `OFFICIAL_DOC` | No | No | Useful for reconciling actual spend. |
 | Resolve live model config | PREFLIGHT / generation | `topview_get_generation_config` | `OFFICIAL_DOC` | No | No | **Authoritative source** for model IDs, required fields, supported durations/resolutions and billing hints. |
+| Canvas local media upload | REFERENCES / assets | `prepare_topview_canvas_media_upload` -> HTTP PUT -> `create_topview_canvas_media_node` -> `get_topview_canvas_node_details` | `VERIFIED_LIVE` | No generation submitted | Reference approval required before lock | Verified for PNG reference upload in Phase 1D-B. Record only returned Canvas node IDs after media-backed readback. Do not persist upload URLs. |
 | Upload credential | REFERENCES / assets | `ta_upload_credential` | `OFFICIAL_DOC` | No/unknown | No | Follow with upload and file verification. |
 | Verify uploaded file | REFERENCES / assets | `ta_upload_check_file` | `OFFICIAL_DOC` | No | No | Do not use a file ID before verification succeeds. |
 | Generate/edit image | STORYBOARD / KEYFRAMES | `topview_generate_image` | `OFFICIAL_DOC` | Yes | Storyboard gate before motion | `taskType`/model fields must be resolved live. |
