@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rbl.local/schemas/topview-capabilities.schema.json",
+  "title": "RBL Topview Live Capability Snapshot",
+  "description": "Local snapshot of the actual Topview MCP/plugin surface observed in a Codex production session.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "captured_at",
+    "operator_environment",
+    "session",
+    "account",
+    "capabilities",
+    "generation_configs"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "0.1.0"},
+    "captured_at": {"type": ["string", "null"], "format": "date-time"},
+    "operator_environment": {
+      "type": "string",
+      "enum": ["codex", "chatgpt", "other"]
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "connected", "authenticated"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["NOT_DISCOVERED", "READY", "BLOCKED"]
+        },
+        "mcp_name": {"type": ["string", "null"]},
+        "mcp_version": {"type": ["string", "null"]},
+        "connected": {"type": "boolean"},
+        "authenticated": {"type": ["boolean", "null"]},
+        "notes": {"type": ["string", "null"]}
+      }
+    },
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["account_hint", "canvas_id", "canvas_access", "ownership_permission"],
+      "properties": {
+        "account_hint": {"type": ["string", "null"]},
+        "canvas_id": {"type": ["string", "null"]},
+        "canvas_access": {"type": ["boolean", "null"]},
+        "ownership_permission": {"type": ["boolean", "null"]}
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/capability"}
+    },
+    "generation_configs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/generationConfig"}
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "tool_name", "chargeable", "verified_at"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "mcp_connectivity",
+            "authentication",
+            "canvas_access",
+            "canvas_ownership",
+            "reference_access",
+            "generation_config",
+            "image_generation",
+            "text_to_video",
+            "image_to_video",
+            "omni_reference",
+            "motion_control",
+            "task_monitoring",
+            "targeted_video_edit",
+            "timeline_edit",
+            "timeline_export"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["VERIFIED_LIVE", "MANUAL_REQUIRED", "UNAVAILABLE", "UNVERIFIED"]
+        },
+        "tool_name": {"type": ["string", "null"]},
+        "chargeable": {"type": ["boolean", "null"]},
+        "verified_at": {"type": ["string", "null"], "format": "date-time"},
+        "schema_notes": {"type": ["string", "null"]},
+        "source": {
+          "type": "string",
+          "enum": ["LIVE_MCP", "MANUAL_CONFIRMATION", "NOT_OBSERVED"],
+          "default": "NOT_OBSERVED"
+        }
+      }
+    },
+    "generationConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_type", "submit_model", "resolutions", "durations_seconds", "required_fields"],
+      "properties": {
+        "task_type": {"type": "string", "minLength": 1},
+        "submit_model": {"type": "string", "minLength": 1},
+        "resolutions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "durations_seconds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "number", "exclusiveMinimum": 0}
+        },
+        "required_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "native_audio": {"type": ["boolean", "null"]},
+        "billing_hint": {"type": ["string", "null"]}
+      }
+    }
+  }
+}
