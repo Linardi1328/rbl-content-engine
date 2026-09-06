@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rbl.local/schemas/topview-references.schema.json",
+  "title": "RBL Topview Reference Registry",
+  "description": "Local mutable registry for authoritative Topview reference assets used during the Phase 1D pilot.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project_id",
+    "pilot_reference_ids",
+    "status",
+    "references",
+    "last_updated_at"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "0.1.0"},
+    "project_id": {"type": "string", "minLength": 1},
+    "pilot_reference_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^REF_[A-Z0-9_]+$"}
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "STAGED",
+        "AWAITING_REMOTE_REGISTRATION",
+        "AWAITING_HUMAN_APPROVAL",
+        "AWAITING_REFERENCE_LOCK",
+        "COMPLETE",
+        "BLOCKED"
+      ]
+    },
+    "references": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/referenceRecord"}
+    },
+    "blocking_reason": {"type": ["string", "null"]},
+    "last_updated_at": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "$defs": {
+    "referenceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_id",
+        "reference_type",
+        "source_path",
+        "source_sha256",
+        "remote_asset_id",
+        "approval_status",
+        "locked",
+        "staged_at",
+        "registered_at",
+        "approved_at",
+        "locked_at"
+      ],
+      "properties": {
+        "reference_id": {"type": "string", "pattern": "^REF_[A-Z0-9_]+$"},
+        "reference_type": {
+          "type": "string",
+          "enum": ["character", "product", "uniform", "location", "style", "object", "image", "video", "other"]
+        },
+        "source_path": {"type": "string", "minLength": 1},
+        "source_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "remote_asset_id": {"type": ["string", "null"]},
+        "approval_status": {
+          "type": "string",
+          "enum": ["HUMAN_REQUIRED", "APPROVED", "REJECTED"]
+        },
+        "locked": {"type": "boolean"},
+        "staged_at": {"type": ["string", "null"], "format": "date-time"},
+        "registered_at": {"type": ["string", "null"], "format": "date-time"},
+        "approved_at": {"type": ["string", "null"], "format": "date-time"},
+        "locked_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    }
+  }
+}
