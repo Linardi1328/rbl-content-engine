@@ -64,6 +64,61 @@ class TopviewContractIntegrityTests(unittest.TestCase):
             },
         )
 
+    def test_production_schema_requires_prooflab_verified_handoff(self) -> None:
+        schema = json.loads(
+            (ROOT / "schemas" / "topview-production.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(schema["properties"]["schema_version"]["const"], "0.2.0")
+        self.assertIn("verification_boundary", schema["required"])
+
+        boundary = schema["properties"]["verification_boundary"]
+        self.assertEqual(
+            boundary["properties"]["source"]["const"],
+            "rbl_content_engine.prooflab",
+        )
+        self.assertEqual(
+            boundary["properties"]["gate"]["const"],
+            "require_verified_claims",
+        )
+        self.assertEqual(boundary["properties"]["policy"]["const"], "FAIL_CLOSED")
+
+        required_scene_fields = set(schema["$defs"]["scene"]["required"])
+        self.assertIn("content_lineage", required_scene_fields)
+
+        lineage_variants = schema["$defs"]["contentLineage"]["oneOf"]
+        statuses = {
+            variant["properties"]["verification_status"]["const"]
+            for variant in lineage_variants
+        }
+        self.assertEqual(statuses, {"VERIFIED", "NOT_APPLICABLE"})
+
+        verified = next(
+            variant
+            for variant in lineage_variants
+            if variant["properties"]["verification_status"]["const"] == "VERIFIED"
+        )
+        self.assertEqual(verified["properties"]["claim_ids"]["minItems"], 1)
+        self.assertEqual(verified["properties"]["evidence_refs"]["minItems"], 1)
+
+        not_applicable = next(
+            variant
+            for variant in lineage_variants
+            if variant["properties"]["verification_status"]["const"]
+            == "NOT_APPLICABLE"
+        )
+        self.assertEqual(not_applicable["properties"]["claim_ids"]["maxItems"], 0)
+        self.assertEqual(
+            not_applicable["properties"]["evidence_refs"]["maxItems"], 0
+        )
+
+        required_checks = schema["$defs"]["qcContract"]["properties"][
+            "required_checks"
+        ]
+        self.assertEqual(required_checks["contains"]["const"], "factual_lineage")
+
     def test_state_example_starts_safe_and_unexecuted(self) -> None:
         state = json.loads(
             (ROOT / ".production" / "topview-state.example.json").read_text(
@@ -96,6 +151,15 @@ class TopviewContractIntegrityTests(unittest.TestCase):
         self.assertIn("720p", agents)
         self.assertIn("1080p", agents)
 
+    def test_agent_instructions_align_with_local_prooflab_contract(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+        self.assertNotIn("- No ProofLab integration.", agents)
+        self.assertIn("src/rbl_content_engine/prooflab.py", agents)
+        self.assertIn("VerifiedClaim", agents)
+        self.assertIn("require_verified_claims()", agents)
+        self.assertIn("fail-closed factual boundary", agents)
+
     def test_workflow_contains_all_canonical_phases_and_failure_levels(self) -> None:
         workflow = (ROOT / "docs" / "topview" / "WORKFLOW.md").read_text(
             encoding="utf-8"
@@ -124,6 +188,18 @@ class TopviewContractIntegrityTests(unittest.TestCase):
         for level in range(1, 7):
             with self.subTest(level=level):
                 self.assertIn(f"| {level} |", workflow)
+
+    def test_workflow_defines_prooflab_as_upstream_fact_boundary(self) -> None:
+        workflow = (ROOT / "docs" / "topview" / "WORKFLOW.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("ProofLab factual boundary", workflow)
+        self.assertIn("src/rbl_content_engine/prooflab.py", workflow)
+        self.assertIn("VerifiedClaim", workflow)
+        self.assertIn("require_verified_claims()", workflow)
+        self.assertIn("Topview does not perform verification", workflow)
+        self.assertIn("NOT_APPLICABLE", workflow)
 
     def test_tool_map_keeps_hackathon_capabilities_unverified(self) -> None:
         tool_map = (ROOT / "docs" / "topview" / "TOOL_MAP.md").read_text(
