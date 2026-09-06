@@ -65,8 +65,17 @@ The local ProofLab boundary fails closed before factual claims may enter future 
 │   ├── phase-0-spec.md
 │   ├── platform-intelligence.md
 │   ├── codex-phase-0-prompt.md
-│   └── topview/                    # Phase 1 operator contract
-├── schemas/                        # Phase 1 production/state contracts
+│   └── topview/
+│       ├── WORKFLOW.md
+│       ├── TOOL_MAP.md
+│       └── DISCOVERY.md             # Phase 1B live MCP discovery procedure
+├── schemas/
+│   ├── topview-production.schema.json
+│   ├── topview-state.schema.json
+│   └── topview-capabilities.schema.json
+├── .production/
+│   ├── topview-state.example.json
+│   └── topview-capabilities.example.json
 ├── research/
 │   └── platforms/
 │       └── 2026-08-21/
@@ -79,12 +88,16 @@ The local ProofLab boundary fails closed before factual claims may enter future 
 ├── src/
 │   └── rbl_content_engine/
 │       ├── __init__.py
-│       ├── prooflab.py             # local fail-closed factual contract
-│       └── ai_generation.py        # provider-neutral generation contract
+│       ├── prooflab.py              # local fail-closed factual contract
+│       ├── ai_generation.py         # provider-neutral generation contract
+│       └── topview/
+│           ├── validator.py         # Phase 1C semantic contract validation
+│           ├── preflight.py         # Phase 1C fail-closed readiness evaluator
+│           └── __main__.py          # local CLI; no external calls
 └── tests/
 ```
 
-Codex should implement Phase 0 from `docs/codex-phase-0-prompt.md`, while treating `AGENTS.md` and `docs/phase-0-spec.md` as authoritative constraints. Topview-related production work must also follow `docs/topview/WORKFLOW.md` and `docs/topview/TOOL_MAP.md`.
+Codex should implement Phase 0 from `docs/codex-phase-0-prompt.md`, while treating `AGENTS.md` and `docs/phase-0-spec.md` as authoritative constraints. Topview work must also follow `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, and `docs/topview/DISCOVERY.md`.
 
 ## Platform treatments in the demo
 
@@ -136,7 +149,7 @@ with no publication or other external side effects.
 
 ## Phase 1 Topview operator contract
 
-Phase 1 adds documentation and schemas for a future controlled visual-production subsystem without enabling paid generation.
+Phase 1 adds the contract and local safety machinery for a future controlled visual-production subsystem without enabling paid generation.
 
 The intended boundary is:
 
@@ -146,6 +159,8 @@ project evidence
 -> require_verified_claims()
 -> approved content/script/shot manifest
 -> Topview Production Manifest
+-> live Topview capability discovery
+-> local validation / preflight
 -> Codex as RBL Topview Production Operator
 -> future Topview rendering
 -> QC
@@ -153,6 +168,44 @@ project evidence
 ```
 
 Topview is a renderer/production subsystem, not a factual verifier or creative authority.
+
+### Phase 1B — live capability discovery
+
+A Codex session with Topview actually installed must discover the live MCP/plugin surface and write:
+
+```text
+.production/topview-capabilities.json
+```
+
+The live file is gitignored. It uses stable RBL capability IDs so changing Topview tool names do not change the production methodology. `VERIFIED_LIVE` may only come from the active MCP session; public documentation remains `OFFICIAL_DOC` in `TOOL_MAP.md`.
+
+The current ChatGPT environment cannot complete that live promotion because Topview is not connected here. See `docs/topview/DISCOVERY.md` for the exact Codex procedure.
+
+### Phase 1C — local validator and preflight
+
+The dependency-free validator checks the safety invariants that matter before future production:
+
+- ProofLab verification boundary and scene factual lineage;
+- budget ceilings and estimated per-video spend;
+- reference IDs and continuity links;
+- 4–8 second generated-clip default / long-clip justification;
+- factual-lineage QC requirement;
+- production state cannot advance or contain generated tasks before ready preflight;
+- `VERIFIED_LIVE` capabilities require actual observed tool metadata.
+
+Commands:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.topview validate-manifest path/to/manifest.json
+PYTHONPATH=src python -m rbl_content_engine.topview validate-state .production/topview-state.json
+PYTHONPATH=src python -m rbl_content_engine.topview validate-capabilities .production/topview-capabilities.json
+PYTHONPATH=src python -m rbl_content_engine.topview preflight \
+  --manifest path/to/manifest.json \
+  --state .production/topview-state.json \
+  --capabilities .production/topview-capabilities.json
+```
+
+These commands perform no MCP/network calls. Phase 1 preflight intentionally blocks chargeable generation even when synthetic/live capability checks otherwise pass; paid execution requires a later explicit human-authorized phase.
 
 ## Later learning loop
 

@@ -11,8 +11,9 @@ When instructions conflict, follow this order:
 3. `docs/platform-intelligence.md`
 4. for Topview production tasks, `docs/topview/WORKFLOW.md`
 5. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
-6. the active task/prompt
-7. existing implementation conventions
+6. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
+7. the active task/prompt
+8. existing implementation conventions
 
 Topview documentation never overrides the Phase 0 hard constraints below unless the human owner explicitly changes the project phase/scope.
 
@@ -79,7 +80,7 @@ Phase 1 may define the future Topview production contract without enabling paid/
 For any Topview-related task:
 
 - Codex acts as **RBL Topview Production Operator**, not creative director.
-- Read `docs/topview/WORKFLOW.md` and `docs/topview/TOOL_MAP.md` before planning or executing Topview operations.
+- Read `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, and `docs/topview/DISCOVERY.md` before planning or executing Topview operations.
 - Topview is downstream of the local ProofLab boundary. Factual content must already be represented by `VerifiedClaim` values that pass `require_verified_claims()` before it enters a Topview Production Manifest or future Topview execution path.
 - Topview may visualize verified facts but must never create, upgrade, reinterpret, or validate unsupported/conflicting project claims.
 - Treat human-approved references and keyframes as authoritative; locked assets must not be silently redesigned.
@@ -89,11 +90,14 @@ For any Topview-related task:
 - Preserve explicit scene entry/exit state where continuity matters and enforce duplicate/identity/object-count QC constraints.
 - Use targeted repair for local/cosmetic failures when a verified live tool supports it; do not blindly regenerate a mostly-correct shot.
 - Never guess current Topview tool names, model IDs, permissions, or schemas. Public docs establish only `OFFICIAL_DOC`; active MCP discovery establishes `VERIFIED_LIVE`.
+- Record actual live discovery in local `.production/topview-capabilities.json`; never commit that file to this public repository.
+- Run the dependency-free local validators/preflight in `rbl_content_engine.topview` before any future Topview execution step.
+- A validator or preflight result does not authorize spending. Phase 1 CLI intentionally provides no paid-generation authorization switch.
 - Authentication/Canvas ownership failures are hard stops. Resolve permissions and repeat preflight before production.
 - Maintain resumable execution state in local `.production/topview-state.json`; never commit that live state file to this public repository.
 - Approval is scoped. Reference/storyboard/draft/timeline approval never implies final publication approval.
 
-Phase 1 documentation/schemas do **not** authorize any chargeable Topview call while the Phase 0 no-paid-API rule remains active.
+Phase 1 documentation/schemas/validators do **not** authorize any chargeable Topview call while the Phase 0 no-paid-API rule remains active.
 
 ## Future video-production budget guardrail
 

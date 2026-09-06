@@ -5,6 +5,6 @@ PYTHON ?= python3
 check:
 	$(PYTHON) -m compileall -q src tests
 
-# Phase 0 implementation should keep this command dependency-free.
+# Keep repository tests dependency-free while importing the src-layout package directly.
 test:
-	$(PYTHON) -m unittest discover -s tests -p 'test_*.py' -v
+	PYTHONPATH=src $(PYTHON) -m unittest discover -s tests -p 'test_*.py' -v
