@@ -94,6 +94,8 @@ class TopviewContractIntegrityTests(unittest.TestCase):
             for variant in lineage_variants
         }
         self.assertEqual(statuses, {"VERIFIED", "NOT_APPLICABLE"})
+        self.assertNotIn("UNSUPPORTED", statuses)
+        self.assertNotIn("CONFLICTING", statuses)
 
         verified = next(
             variant
@@ -159,6 +161,7 @@ class TopviewContractIntegrityTests(unittest.TestCase):
         self.assertIn("VerifiedClaim", agents)
         self.assertIn("require_verified_claims()", agents)
         self.assertIn("fail-closed factual boundary", agents)
+        self.assertIn("No external ProofLab service", agents)
 
     def test_workflow_contains_all_canonical_phases_and_failure_levels(self) -> None:
         workflow = (ROOT / "docs" / "topview" / "WORKFLOW.md").read_text(
@@ -201,11 +204,13 @@ class TopviewContractIntegrityTests(unittest.TestCase):
         self.assertIn("Topview does not perform verification", workflow)
         self.assertIn("NOT_APPLICABLE", workflow)
 
-    def test_tool_map_keeps_hackathon_capabilities_unverified(self) -> None:
+    def test_tool_map_keeps_prooflab_upstream_and_hackathon_tools_unverified(self) -> None:
         tool_map = (ROOT / "docs" / "topview" / "TOOL_MAP.md").read_text(
             encoding="utf-8"
         )
 
+        self.assertIn("Upstream factual boundary", tool_map)
+        self.assertIn("require_verified_claims()", tool_map)
         self.assertIn("HACKATHON_OBSERVED", tool_map)
         self.assertIn("Canvas ownership/permission inspection", tool_map)
         self.assertIn("Targeted `video_edit`", tool_map)
