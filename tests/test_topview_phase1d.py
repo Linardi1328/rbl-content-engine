@@ -94,6 +94,15 @@ def live_capabilities() -> dict:
 
 
 class Phase1DTopviewTests(unittest.TestCase):
+    def test_repository_routes_phase1d_and_keeps_live_registry_private(self) -> None:
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+
+        self.assertIn("docs/topview/PHASE_1D_PILOT.md", agents)
+        self.assertIn("source drift after locking is a hard stop", agents)
+        self.assertIn(".production/topview-references.json", gitignore)
+        self.assertNotIn(".production/topview-references.example.json", gitignore)
+
     def test_tracked_reference_registry_example_matches_fixture_hashes(self) -> None:
         registry = json.loads(
             (ROOT / ".production" / "topview-references.example.json").read_text(
