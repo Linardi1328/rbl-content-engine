@@ -27,6 +27,20 @@ Official source inspected:
 
 Do not promote an entry to `VERIFIED_LIVE` based only on this document, memory, or public docs.
 
+## Upstream factual boundary
+
+ProofLab is not a Topview tool and must never be replaced by one. Before factual project content reaches this tool-routing layer, it must pass the local RBL verification contract:
+
+```text
+src/rbl_content_engine/prooflab.py
+VerifiedClaim
+-> require_verified_claims()
+-> Topview Production Manifest
+-> Topview MCP operations
+```
+
+`UNSUPPORTED` or `CONFLICTING` claims stop before Topview. Topview generation, editing, Canvas, or timeline tools may render verified content but cannot supply factual evidence or promote a blocked claim to verified.
+
 ## Currently documented Topview MCP surface
 
 | RBL capability | RBL phase | Current documented tool/capability | Status | Chargeable? | Human gate? | Notes |
