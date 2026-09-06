@@ -18,6 +18,7 @@ The intended long-term handoff is:
 
 ```text
 sources / evidence
+-> ProofLab VerifiedClaim boundary
 -> verified claims
 -> content brief
 -> platform treatment
@@ -30,6 +31,32 @@ sources / evidence
 ```
 
 Project evidence continues to control **what RBL is allowed to claim**. The Topview production contract controls **how an approved visual treatment is produced**. Visual generation must never invent or validate project facts.
+
+## ProofLab factual boundary
+
+The local contract in `src/rbl_content_engine/prooflab.py` is the upstream fail-closed factual gate for future generation paths.
+
+Before factual project content may enter a Topview Production Manifest or future Topview execution path:
+
+1. represent factual inputs as `VerifiedClaim` values;
+2. require those claims to pass `require_verified_claims()`;
+3. retain the verified claim IDs and evidence references in the scene's `content_lineage`;
+4. mark scenes with no factual project assertion as `NOT_APPLICABLE` rather than fabricating claim lineage.
+
+Topview does not perform verification. It consumes an already-verified production contract. It must never change `UNSUPPORTED` or `CONFLICTING` material into `VERIFIED`, infer a new project fact from a visual prompt, or use platform/creative guidance as factual evidence.
+
+The intended factual handoff is:
+
+```text
+project evidence
+-> VerifiedClaim
+-> require_verified_claims()
+-> approved content/script/shot manifest
+-> Topview Production Manifest
+-> Topview rendering
+```
+
+A manifest containing factual project assertions without verified lineage is invalid for Topview production even if the visual treatment itself is otherwise complete.
 
 ## Creative-freedom gradient
 
@@ -178,7 +205,7 @@ Minimum QC dimensions:
 - action logic is physically/narratively coherent;
 - entry/exit continuity is coherent;
 - camera/action intent is satisfied;
-- factual on-screen text/narration remains within approved evidence lineage.
+- factual on-screen text/narration remains within approved ProofLab-verified evidence lineage.
 
 QC records evidence and a disposition. It does not grant publication approval.
 
