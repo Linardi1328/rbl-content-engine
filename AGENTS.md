@@ -96,7 +96,7 @@ For any Topview-related task:
 - Phase 1D may inspect non-chargeable live connectivity, account/Canvas permissions, tool schemas, and generation configuration, but it must not submit an image/video generation task.
 - Phase 1D reference registration must record only a remote asset ID actually returned by the live Topview session. Successful upload/registration never implies human approval.
 - Record the live Phase 1D reference registry in `.production/topview-references.json`; never commit that file to this public repository.
-- A locked reference binds the RBL reference ID to its manifest type, local source path, SHA-256 source fingerprint, observed remote Topview asset ID, and explicit human approval. Source drift after locking is a hard stop.
+- A locked reference binds the RBL reference ID to its manifest type, local source path, SHA-256 source fingerprint, observed remote Topview asset ID, and explicit human approval; source drift after locking is a hard stop.
 - A validator or preflight result does not authorize spending. Phase 1 CLI intentionally provides no paid-generation authorization switch.
 - Authentication/Canvas ownership failures are hard stops. Resolve permissions and repeat preflight before production.
 - Maintain resumable execution state in local `.production/topview-state.json`; never commit that live state file to this public repository.
