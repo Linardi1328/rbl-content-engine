@@ -34,7 +34,7 @@ Project evidence continues to control **what RBL is allowed to claim**. The Topv
 
 ## ProofLab factual boundary
 
-The local contract in `src/rbl_content_engine/prooflab.py` is the upstream fail-closed factual gate for future generation paths.
+The local contract in `src/rbl_content_engine/prooflab.py` is the upstream fail-closed factual gate for future generation paths. This is the local contract already present on `main`; it does not authorize an external ProofLab service, network dependency, or paid ProofLab action.
 
 Before factual project content may enter a Topview Production Manifest or future Topview execution path:
 
