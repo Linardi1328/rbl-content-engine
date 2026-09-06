@@ -1,0 +1,37 @@
+{
+  "schema_version": "0.1.0",
+  "captured_at": null,
+  "operator_environment": "codex",
+  "session": {
+    "status": "NOT_DISCOVERED",
+    "mcp_name": null,
+    "mcp_version": null,
+    "connected": false,
+    "authenticated": null,
+    "notes": "Populate this from the actual Codex Topview MCP session. Do not promote public documentation to VERIFIED_LIVE."
+  },
+  "account": {
+    "account_hint": null,
+    "canvas_id": null,
+    "canvas_access": null,
+    "ownership_permission": null
+  },
+  "capabilities": [
+    {"id": "mcp_connectivity", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "authentication", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "canvas_access", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "canvas_ownership", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "reference_access", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "generation_config", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "image_generation", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "text_to_video", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "image_to_video", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "omni_reference", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "motion_control", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "task_monitoring", "status": "UNVERIFIED", "tool_name": null, "chargeable": false, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "targeted_video_edit", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "timeline_edit", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"},
+    {"id": "timeline_export", "status": "UNVERIFIED", "tool_name": null, "chargeable": null, "verified_at": null, "schema_notes": null, "source": "NOT_OBSERVED"}
+  ],
+  "generation_configs": []
+}
