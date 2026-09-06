@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rbl.local/schemas/topview-production.schema.json",
+  "title": "RBL Topview Production Manifest",
+  "description": "Machine-readable production contract between RBL creative decisions and a future Codex + Topview production operator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project",
+    "budget_policy",
+    "approval_gates",
+    "references",
+    "style",
+    "environments",
+    "scenes"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "0.1.0"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "platform", "format", "runtime_target_seconds"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "title": {"type": "string"},
+        "platform": {
+          "type": "string",
+          "enum": ["instagram", "tiktok", "youtube_shorts", "youtube", "other"]
+        },
+        "format": {
+          "type": "string",
+          "pattern": "^[0-9]+:[0-9]+$"
+        },
+        "runtime_target_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "content_lineage": {"$ref": "#/$defs/contentLineage"}
+      }
+    },
+    "budget_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_monthly_usd",
+        "normal_monthly_cap_usd",
+        "absolute_monthly_ceiling_usd",
+        "retries_count_against_budget",
+        "premium_generation_requires_reason"
+      ],
+      "properties": {
+        "target_monthly_usd": {"type": "number", "minimum": 0, "maximum": 60},
+        "normal_monthly_cap_usd": {"type": "number", "minimum": 0, "maximum": 100},
+        "absolute_monthly_ceiling_usd": {"type": "number", "minimum": 0, "maximum": 150},
+        "per_video_cap_usd": {"type": ["number", "null"], "minimum": 0},
+        "retries_count_against_budget": {"type": "boolean", "const": true},
+        "premium_generation_requires_reason": {"type": "boolean", "const": true},
+        "prefer_existing_assets": {"type": "boolean", "default": true},
+        "default_max_ai_generated_seconds_per_short": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 10
+        }
+      }
+    },
+    "approval_gates": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 6,
+      "items": {
+        "type": "string",
+        "enum": [
+          "REFERENCE_APPROVAL",
+          "STORYBOARD_KEYFRAME_APPROVAL",
+          "DRAFT_720P_APPROVAL",
+          "FINAL_1080P_APPROVAL",
+          "TIMELINE_APPROVAL",
+          "EXPORT_PUBLICATION_APPROVAL"
+        ]
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/reference"}
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["locked"],
+      "properties": {
+        "reference_id": {"type": ["string", "null"]},
+        "locked": {"type": "boolean"},
+        "written_constraints": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "environments": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/environment"}
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/scene"}
+    }
+  },
+  "$defs": {
+    "contentLineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claim_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "approval_status", "locked"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^REF_[A-Z0-9_]+$"},
+        "type": {
+          "type": "string",
+          "enum": ["character", "product", "uniform", "location", "style", "object", "image", "video", "other"]
+        },
+        "source": {"type": ["string", "null"]},
+        "remote_asset_id": {"type": ["string", "null"]},
+        "approval_status": {"$ref": "#/$defs/approvalStatus"},
+        "locked": {"type": "boolean"},
+        "notes": {"type": "string"}
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "approval_status", "locked"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^ENV_[A-Z0-9_]+$"},
+        "reference_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^REF_[A-Z0-9_]+$"}
+        },
+        "description": {"type": "string"},
+        "approval_status": {"$ref": "#/$defs/approvalStatus"},
+        "locked": {"type": "boolean"}
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "purpose",
+        "duration_seconds",
+        "references",
+        "generation",
+        "storyboard",
+        "entry_state",
+        "exit_state",
+        "continuity",
+        "qc",
+        "approval"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^S[0-9]{2,}$"},
+        "purpose": {"type": "string", "minLength": 1},
+        "duration_seconds": {"type": "number", "exclusiveMinimum": 0},
+        "content_lineage": {"$ref": "#/$defs/contentLineage"},
+        "references": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^REF_[A-Z0-9_]+$"}
+        },
+        "environment_id": {"type": ["string", "null"], "pattern": "^ENV_[A-Z0-9_]+$"},
+        "shot": {"$ref": "#/$defs/shot"},
+        "generation": {"$ref": "#/$defs/generation"},
+        "storyboard": {"$ref": "#/$defs/storyboard"},
+        "entry_state": {"$ref": "#/$defs/stateSnapshot"},
+        "exit_state": {"$ref": "#/$defs/stateSnapshot"},
+        "continuity": {"$ref": "#/$defs/continuity"},
+        "qc": {"$ref": "#/$defs/qcContract"},
+        "approval": {"$ref": "#/$defs/sceneApproval"}
+      }
+    },
+    "shot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "framing": {"type": "string"},
+        "composition": {"type": "string"},
+        "camera_direction": {"type": "string"},
+        "camera_motion": {"type": "string"},
+        "lens_feel": {"type": "string"},
+        "action": {"type": "string"},
+        "lighting": {"type": "string"}
+      }
+    },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "resolution_draft", "resolution_final", "native_audio"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "image_to_video",
+            "text_to_video",
+            "omni_reference",
+            "motion_control",
+            "existing_asset",
+            "screen_recording",
+            "programmatic_motion_graphics",
+            "manual"
+          ]
+        },
+        "requested_model": {"type": ["string", "null"]},
+        "resolution_draft": {
+          "type": "string",
+          "enum": ["720p", "source", "not_applicable"]
+        },
+        "resolution_final": {
+          "type": "string",
+          "enum": ["1080p", "source", "not_applicable"]
+        },
+        "native_audio": {"type": "boolean"},
+        "target_clip_seconds": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "long_clip_justification": {"type": ["string", "null"]},
+        "premium_generation_reason": {"type": ["string", "null"]},
+        "estimated_cost_usd": {"type": ["number", "null"], "minimum": 0}
+      }
+    },
+    "storyboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_frame_required", "end_frame_required", "approval_status"],
+      "properties": {
+        "start_frame_required": {"type": "boolean"},
+        "end_frame_required": {"type": "boolean"},
+        "approved_start_frame_id": {"type": ["string", "null"]},
+        "approved_end_frame_id": {"type": ["string", "null"]},
+        "approval_status": {"$ref": "#/$defs/approvalStatus"}
+      }
+    },
+    "stateSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["characters", "positions", "clothing", "objects", "environment", "camera_direction", "emotional_state"],
+      "properties": {
+        "characters": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "positions": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "clothing": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "objects": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "environment": {"type": ["string", "null"]},
+        "camera_direction": {"type": ["string", "null"]},
+        "emotional_state": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
+    "continuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preserve_identity", "preserve_environment", "duplicates_allowed"],
+      "properties": {
+        "preserve_identity": {"type": "boolean"},
+        "preserve_environment": {"type": "boolean"},
+        "duplicates_allowed": {"type": "boolean"},
+        "continues_from_scene": {"type": ["string", "null"], "pattern": "^S[0-9]{2,}$"},
+        "object_count_constraints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object", "count"],
+            "properties": {
+              "object": {"type": "string"},
+              "count": {"type": "integer", "minimum": 0}
+            }
+          }
+        },
+        "notes": {"type": "string"}
+      }
+    },
+    "qcContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_checks"],
+      "properties": {
+        "required_checks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "identity_consistency",
+              "no_duplicate_characters",
+              "no_duplicate_faces",
+              "no_duplicate_bodies",
+              "no_mirrored_clones",
+              "object_count",
+              "environment_continuity",
+              "composition_match",
+              "anatomy",
+              "action_logic",
+              "entry_exit_continuity",
+              "camera_intent",
+              "factual_lineage"
+            ]
+          }
+        }
+      }
+    },
+    "sceneApproval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "storyboard", "video_draft", "final"],
+      "properties": {
+        "reference": {"$ref": "#/$defs/approvalStatus"},
+        "storyboard": {"$ref": "#/$defs/approvalStatus"},
+        "video_draft": {"$ref": "#/$defs/approvalStatus"},
+        "final": {"$ref": "#/$defs/approvalStatus"}
+      }
+    },
+    "approvalStatus": {
+      "type": "string",
+      "enum": ["NOT_READY", "HUMAN_REQUIRED", "APPROVED", "REJECTED"]
+    }
+  }
+}
