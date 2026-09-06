@@ -14,3 +14,6 @@ dist/
 
 # Phase 0 generated demo output.
 examples/*/output/
+
+# Live Topview production state may contain remote project/task/asset identifiers.
+.production/topview-state.json
