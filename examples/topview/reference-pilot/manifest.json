@@ -1,0 +1,150 @@
+{
+  "schema_version": "0.2.0",
+  "project": {
+    "id": "RBL-TOPVIEW-PILOT-001",
+    "title": "Synthetic Topview Reference Pilot",
+    "platform": "instagram",
+    "format": "9:16",
+    "runtime_target_seconds": 5,
+    "content_lineage": {
+      "verification_status": "NOT_APPLICABLE",
+      "claim_ids": [],
+      "evidence_refs": []
+    }
+  },
+  "verification_boundary": {
+    "source": "rbl_content_engine.prooflab",
+    "gate": "require_verified_claims",
+    "policy": "FAIL_CLOSED",
+    "verified_claim_ids": []
+  },
+  "budget_policy": {
+    "target_monthly_usd": 60,
+    "normal_monthly_cap_usd": 100,
+    "absolute_monthly_ceiling_usd": 150,
+    "per_video_cap_usd": 5,
+    "retries_count_against_budget": true,
+    "premium_generation_requires_reason": true,
+    "prefer_existing_assets": true,
+    "default_max_ai_generated_seconds_per_short": 10
+  },
+  "approval_gates": [
+    "REFERENCE_APPROVAL",
+    "STORYBOARD_KEYFRAME_APPROVAL",
+    "DRAFT_720P_APPROVAL",
+    "FINAL_1080P_APPROVAL",
+    "TIMELINE_APPROVAL",
+    "EXPORT_PUBLICATION_APPROVAL"
+  ],
+  "references": [
+    {
+      "id": "REF_PRODUCT",
+      "type": "product",
+      "source": "examples/topview/reference-pilot/ref-product.txt",
+      "remote_asset_id": null,
+      "approval_status": "HUMAN_REQUIRED",
+      "locked": false,
+      "notes": "Synthetic contract fixture only; replace with an approved real media asset in a live pilot."
+    },
+    {
+      "id": "REF_STYLE_MASTER",
+      "type": "style",
+      "source": "examples/topview/reference-pilot/ref-style.txt",
+      "remote_asset_id": null,
+      "approval_status": "HUMAN_REQUIRED",
+      "locked": false,
+      "notes": "Synthetic contract fixture only."
+    }
+  ],
+  "style": {
+    "reference_id": "REF_STYLE_MASTER",
+    "locked": false,
+    "written_constraints": [
+      "Use the approved style reference only after the reference lock is complete."
+    ]
+  },
+  "environments": [],
+  "scenes": [
+    {
+      "id": "S01",
+      "purpose": "prove Phase 1D can prepare a future approved-keyframe image-to-video shot without generating it",
+      "duration_seconds": 5,
+      "content_lineage": {
+        "verification_status": "NOT_APPLICABLE",
+        "claim_ids": [],
+        "evidence_refs": []
+      },
+      "references": ["REF_PRODUCT", "REF_STYLE_MASTER"],
+      "environment_id": null,
+      "shot": {
+        "framing": "medium product hero",
+        "composition": "single approved product centered with clean negative space",
+        "camera_direction": "forward",
+        "camera_motion": "slow controlled push-in",
+        "lens_feel": "natural commercial",
+        "action": "no generation in Phase 1D",
+        "lighting": "controlled cinematic product lighting"
+      },
+      "generation": {
+        "method": "image_to_video",
+        "requested_model": null,
+        "resolution_draft": "720p",
+        "resolution_final": "1080p",
+        "native_audio": false,
+        "target_clip_seconds": 5,
+        "long_clip_justification": null,
+        "premium_generation_reason": null,
+        "estimated_cost_usd": 1
+      },
+      "storyboard": {
+        "start_frame_required": true,
+        "end_frame_required": false,
+        "approved_start_frame_id": null,
+        "approved_end_frame_id": null,
+        "approval_status": "HUMAN_REQUIRED"
+      },
+      "entry_state": {
+        "characters": [],
+        "positions": {},
+        "clothing": {},
+        "objects": {"product_count": 1},
+        "environment": null,
+        "camera_direction": "forward",
+        "emotional_state": {}
+      },
+      "exit_state": {
+        "characters": [],
+        "positions": {},
+        "clothing": {},
+        "objects": {"product_count": 1},
+        "environment": null,
+        "camera_direction": "forward",
+        "emotional_state": {}
+      },
+      "continuity": {
+        "preserve_identity": true,
+        "preserve_environment": true,
+        "duplicates_allowed": false,
+        "continues_from_scene": null,
+        "object_count_constraints": [
+          {"object": "approved product", "count": 1}
+        ],
+        "notes": "Reference pilot only."
+      },
+      "qc": {
+        "required_checks": [
+          "identity_consistency",
+          "object_count",
+          "composition_match",
+          "factual_lineage"
+        ]
+      },
+      "approval": {
+        "reference": "HUMAN_REQUIRED",
+        "storyboard": "HUMAN_REQUIRED",
+        "video_draft": "HUMAN_REQUIRED",
+        "final": "HUMAN_REQUIRED"
+      }
+    }
+  ]
+}

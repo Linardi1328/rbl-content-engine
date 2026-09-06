@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1.0",
+  "project_id": "RBL-TOPVIEW-PILOT-001",
+  "pilot_reference_ids": [
+    "REF_PRODUCT",
+    "REF_STYLE_MASTER"
+  ],
+  "status": "AWAITING_REMOTE_REGISTRATION",
+  "references": {
+    "REF_PRODUCT": {
+      "reference_id": "REF_PRODUCT",
+      "reference_type": "product",
+      "source_path": "examples/topview/reference-pilot/ref-product.txt",
+      "source_sha256": "d4133fd75404ce56a0ae108e81bd42680739e32051d9155340981c5134b68755",
+      "remote_asset_id": null,
+      "approval_status": "HUMAN_REQUIRED",
+      "locked": false,
+      "staged_at": null,
+      "registered_at": null,
+      "approved_at": null,
+      "locked_at": null
+    },
+    "REF_STYLE_MASTER": {
+      "reference_id": "REF_STYLE_MASTER",
+      "reference_type": "style",
+      "source_path": "examples/topview/reference-pilot/ref-style.txt",
+      "source_sha256": "feced43c905770d204778b19440c7e0058a3b1d50b85bab0e31f10e179ad1a71",
+      "remote_asset_id": null,
+      "approval_status": "HUMAN_REQUIRED",
+      "locked": false,
+      "staged_at": null,
+      "registered_at": null,
+      "approved_at": null,
+      "locked_at": null
+    }
+  },
+  "blocking_reason": null,
+  "last_updated_at": null
+}

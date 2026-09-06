@@ -12,8 +12,9 @@ When instructions conflict, follow this order:
 4. for Topview production tasks, `docs/topview/WORKFLOW.md`
 5. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
 6. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
-7. the active task/prompt
-8. existing implementation conventions
+7. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
+8. the active task/prompt
+9. existing implementation conventions
 
 Topview documentation never overrides the Phase 0 hard constraints below unless the human owner explicitly changes the project phase/scope.
 
@@ -75,12 +76,12 @@ The local ProofLab contract does not expand Phase 0 into external ProofLab autom
 
 ## Topview production operator contract
 
-Phase 1 may define the future Topview production contract without enabling paid/video execution.
+Phase 1 may define and exercise non-chargeable production-control contracts without enabling paid/video execution.
 
 For any Topview-related task:
 
 - Codex acts as **RBL Topview Production Operator**, not creative director.
-- Read `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, and `docs/topview/DISCOVERY.md` before planning or executing Topview operations.
+- Read `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, and `docs/topview/DISCOVERY.md` before planning or executing Topview operations. Read `docs/topview/PHASE_1D_PILOT.md` before the controlled preflight/reference pilot.
 - Topview is downstream of the local ProofLab boundary. Factual content must already be represented by `VerifiedClaim` values that pass `require_verified_claims()` before it enters a Topview Production Manifest or future Topview execution path.
 - Topview may visualize verified facts but must never create, upgrade, reinterpret, or validate unsupported/conflicting project claims.
 - Treat human-approved references and keyframes as authoritative; locked assets must not be silently redesigned.
@@ -89,15 +90,19 @@ For any Topview-related task:
 - Use 720p for draft motion/composition testing and only advance to 1080p after the required QC/human gate when the live model supports those resolutions.
 - Preserve explicit scene entry/exit state where continuity matters and enforce duplicate/identity/object-count QC constraints.
 - Use targeted repair for local/cosmetic failures when a verified live tool supports it; do not blindly regenerate a mostly-correct shot.
-- Never guess current Topview tool names, model IDs, permissions, or schemas. Public docs establish only `OFFICIAL_DOC`; active MCP discovery establishes `VERIFIED_LIVE`.
+- Never guess current Topview tool names, model IDs, permissions, remote asset IDs, or schemas. Public docs establish only `OFFICIAL_DOC`; active MCP discovery establishes `VERIFIED_LIVE`.
 - Record actual live discovery in local `.production/topview-capabilities.json`; never commit that file to this public repository.
 - Run the dependency-free local validators/preflight in `rbl_content_engine.topview` before any future Topview execution step.
+- Phase 1D may inspect non-chargeable live connectivity, account/Canvas permissions, tool schemas, and generation configuration, but it must not submit an image/video generation task.
+- Phase 1D reference registration must record only a remote asset ID actually returned by the live Topview session. Successful upload/registration never implies human approval.
+- Record the live Phase 1D reference registry in `.production/topview-references.json`; never commit that file to this public repository.
+- A locked reference binds the RBL reference ID to its manifest type, local source path, SHA-256 source fingerprint, observed remote Topview asset ID, and explicit human approval; source drift after locking is a hard stop.
 - A validator or preflight result does not authorize spending. Phase 1 CLI intentionally provides no paid-generation authorization switch.
 - Authentication/Canvas ownership failures are hard stops. Resolve permissions and repeat preflight before production.
 - Maintain resumable execution state in local `.production/topview-state.json`; never commit that live state file to this public repository.
-- Approval is scoped. Reference/storyboard/draft/timeline approval never implies final publication approval.
+- Approval is scoped. Preflight/reference/storyboard/draft/timeline approval never implies final publication approval.
 
-Phase 1 documentation/schemas/validators do **not** authorize any chargeable Topview call while the Phase 0 no-paid-API rule remains active.
+Phase 1 documentation/schemas/validators/reference tools do **not** authorize any chargeable Topview call while the Phase 0 no-paid-API rule remains active.
 
 ## Future video-production budget guardrail
 

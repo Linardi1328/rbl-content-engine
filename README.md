@@ -68,23 +68,25 @@ The local ProofLab boundary fails closed before factual claims may enter future 
 │   └── topview/
 │       ├── WORKFLOW.md
 │       ├── TOOL_MAP.md
-│       └── DISCOVERY.md             # Phase 1B live MCP discovery procedure
+│       ├── DISCOVERY.md             # Phase 1B live MCP discovery procedure
+│       └── PHASE_1D_PILOT.md        # controlled preflight/reference pilot
 ├── schemas/
 │   ├── topview-production.schema.json
 │   ├── topview-state.schema.json
-│   └── topview-capabilities.schema.json
+│   ├── topview-capabilities.schema.json
+│   └── topview-references.schema.json
 ├── .production/
 │   ├── topview-state.example.json
-│   └── topview-capabilities.example.json
+│   ├── topview-capabilities.example.json
+│   └── topview-references.example.json
 ├── research/
 │   └── platforms/
 │       └── 2026-08-21/
 │           └── platforms.json
 ├── examples/
-│   └── taskpebble/
-│       ├── evidence.md
-│       ├── claims.json
-│       └── direction.json
+│   ├── taskpebble/
+│   └── topview/
+│       └── reference-pilot/         # synthetic/public-safe Phase 1D fixture
 ├── src/
 │   └── rbl_content_engine/
 │       ├── __init__.py
@@ -92,12 +94,14 @@ The local ProofLab boundary fails closed before factual claims may enter future 
 │       ├── ai_generation.py         # provider-neutral generation contract
 │       └── topview/
 │           ├── validator.py         # Phase 1C semantic contract validation
-│           ├── preflight.py         # Phase 1C fail-closed readiness evaluator
-│           └── __main__.py          # local CLI; no external calls
+│           ├── preflight.py         # Phase 1C fail-closed future-production evaluator
+│           ├── pilot.py             # Phase 1D non-chargeable technical preflight
+│           ├── references.py        # Phase 1D reference fingerprints/approval/locks
+│           └── __main__.py          # local CLI; no media generation
 └── tests/
 ```
 
-Codex should implement Phase 0 from `docs/codex-phase-0-prompt.md`, while treating `AGENTS.md` and `docs/phase-0-spec.md` as authoritative constraints. Topview work must also follow `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, and `docs/topview/DISCOVERY.md`.
+Codex should implement Phase 0 from `docs/codex-phase-0-prompt.md`, while treating `AGENTS.md` and `docs/phase-0-spec.md` as authoritative constraints. Topview work must also follow `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, `docs/topview/DISCOVERY.md`, and the applicable pilot document.
 
 ## Platform treatments in the demo
 
@@ -161,6 +165,7 @@ project evidence
 -> Topview Production Manifest
 -> live Topview capability discovery
 -> local validation / preflight
+-> controlled reference preparation
 -> Codex as RBL Topview Production Operator
 -> future Topview rendering
 -> QC
@@ -193,7 +198,7 @@ The dependency-free validator checks the safety invariants that matter before fu
 - production state cannot advance or contain generated tasks before ready preflight;
 - `VERIFIED_LIVE` capabilities require actual observed tool metadata.
 
-Commands:
+Core commands:
 
 ```bash
 PYTHONPATH=src python -m rbl_content_engine.topview validate-manifest path/to/manifest.json
@@ -206,6 +211,46 @@ PYTHONPATH=src python -m rbl_content_engine.topview preflight \
 ```
 
 These commands perform no MCP/network calls. Phase 1 preflight intentionally blocks chargeable generation even when synthetic/live capability checks otherwise pass; paid execution requires a later explicit human-authorized phase.
+
+### Phase 1D — controlled preflight and reference pilot
+
+Phase 1D introduces the first resumable production-control lifecycle while still stopping before generation:
+
+```text
+live discovery
+-> technical preflight
+-> explicit human preflight confirmation
+-> stage 1–2 manifest references
+-> fingerprint local source bytes with SHA-256
+-> record only observed remote Topview asset IDs
+-> explicit human reference approval
+-> cryptographic reference lock
+-> stop
+```
+
+Live mutable registry:
+
+```text
+.production/topview-references.json
+```
+
+This file is gitignored. A locked reference binds its RBL reference ID to the manifest type, source path, source fingerprint, observed remote asset ID, and human approval. If source bytes change later, the pilot blocks with reference drift rather than silently accepting the replacement.
+
+Phase 1D CLI commands include:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.topview phase1d-preflight ...
+PYTHONPATH=src python -m rbl_content_engine.topview phase1d-confirm-preflight ... --human-confirmed
+PYTHONPATH=src python -m rbl_content_engine.topview reference-init ...
+PYTHONPATH=src python -m rbl_content_engine.topview reference-record-remote ...
+PYTHONPATH=src python -m rbl_content_engine.topview reference-approve ... --human-confirmed
+PYTHONPATH=src python -m rbl_content_engine.topview reference-lock ...
+PYTHONPATH=src python -m rbl_content_engine.topview reference-pilot-status ...
+```
+
+The exact invocation and hard-stop policy are documented in `docs/topview/PHASE_1D_PILOT.md`.
+
+Phase 1D does not call Topview itself from this Python package, does not submit any generation task, and requires actual project spend to remain US$0.
 
 ## Later learning loop
 
