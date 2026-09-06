@@ -89,6 +89,12 @@ def _mapping(value: Any) -> Mapping[str, Any] | None:
     return value if isinstance(value, Mapping) else None
 
 
+def _number(value: Any) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return float(value)
+
+
 def _check_lineage(value: Any, path: str, out: _Collector) -> None:
     lineage = _mapping(value)
     if lineage is None:
@@ -131,10 +137,22 @@ def _check_lineage(value: Any, path: str, out: _Collector) -> None:
         )
 
 
-def _number(value: Any) -> float | None:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    return float(value)
+def _check_lineage_claim_subset(
+    value: Any, path: str, verified_claim_ids: set[str], out: _Collector
+) -> None:
+    lineage = _mapping(value)
+    if not lineage or lineage.get("verification_status") != "VERIFIED":
+        return
+    claim_ids = lineage.get("claim_ids")
+    if not isinstance(claim_ids, list):
+        return
+    for claim_id in claim_ids:
+        if not isinstance(claim_id, str) or claim_id not in verified_claim_ids:
+            out.add(
+                "LINEAGE_CLAIM_NOT_VERIFIED",
+                f"{path}.claim_ids",
+                f"claim {claim_id!r} is not present in verification_boundary.verified_claim_ids",
+            )
 
 
 def _validate_budget(budget: Any, path: str, out: _Collector) -> None:
@@ -179,11 +197,7 @@ def validate_manifest(manifest: Mapping[str, Any]) -> ValidationResult:
     out = _Collector()
 
     if manifest.get("schema_version") != MANIFEST_VERSION:
-        out.add(
-            "MANIFEST_VERSION",
-            "schema_version",
-            f"expected {MANIFEST_VERSION}",
-        )
+        out.add("MANIFEST_VERSION", "schema_version", f"expected {MANIFEST_VERSION}")
 
     boundary = _mapping(manifest.get("verification_boundary"))
     expected_boundary = {
@@ -191,6 +205,7 @@ def validate_manifest(manifest: Mapping[str, Any]) -> ValidationResult:
         "gate": "require_verified_claims",
         "policy": "FAIL_CLOSED",
     }
+    verified_claim_ids: set[str] = set()
     if boundary is None:
         out.add(
             "PROOFLAB_BOUNDARY_REQUIRED",
@@ -205,13 +220,29 @@ def validate_manifest(manifest: Mapping[str, Any]) -> ValidationResult:
                     f"verification_boundary.{field}",
                     f"expected {expected!r}",
                 )
-        verified_claim_ids = boundary.get("verified_claim_ids")
-        if not isinstance(verified_claim_ids, list):
+        raw_verified = boundary.get("verified_claim_ids")
+        if not isinstance(raw_verified, list):
             out.add(
                 "VERIFIED_CLAIM_IDS_SHAPE",
                 "verification_boundary.verified_claim_ids",
                 "must be an array",
             )
+        else:
+            for index, claim_id in enumerate(raw_verified):
+                if not isinstance(claim_id, str) or not claim_id:
+                    out.add(
+                        "VERIFIED_CLAIM_ID",
+                        f"verification_boundary.verified_claim_ids[{index}]",
+                        "verified claim IDs must be non-empty strings",
+                    )
+                    continue
+                if claim_id in verified_claim_ids:
+                    out.add(
+                        "VERIFIED_CLAIM_ID_DUPLICATE",
+                        f"verification_boundary.verified_claim_ids[{index}]",
+                        f"duplicate verified claim ID {claim_id}",
+                    )
+                verified_claim_ids.add(claim_id)
 
     _validate_budget(manifest.get("budget_policy"), "budget_policy", out)
     budget = _mapping(manifest.get("budget_policy")) or {}
@@ -239,7 +270,11 @@ def validate_manifest(manifest: Mapping[str, Any]) -> ValidationResult:
     if project is None:
         out.add("PROJECT_REQUIRED", "project", "project must be an object")
     elif "content_lineage" in project:
-        _check_lineage(project.get("content_lineage"), "project.content_lineage", out)
+        lineage = project.get("content_lineage")
+        _check_lineage(lineage, "project.content_lineage", out)
+        _check_lineage_claim_subset(
+            lineage, "project.content_lineage", verified_claim_ids, out
+        )
 
     scenes = manifest.get("scenes")
     if not isinstance(scenes, list) or not scenes:
@@ -263,7 +298,11 @@ def validate_manifest(manifest: Mapping[str, Any]) -> ValidationResult:
         else:
             seen_scene_ids.append(scene_id)
 
-        _check_lineage(scene.get("content_lineage"), f"{path}.content_lineage", out)
+        lineage = scene.get("content_lineage")
+        _check_lineage(lineage, f"{path}.content_lineage", out)
+        _check_lineage_claim_subset(
+            lineage, f"{path}.content_lineage", verified_claim_ids, out
+        )
 
         scene_refs = scene.get("references")
         if not isinstance(scene_refs, list):
@@ -427,19 +466,33 @@ def validate_state(state: Mapping[str, Any]) -> ValidationResult:
                 seen.add(task_id)
 
     if preflight_status == "READY" and preflight is not None:
-        for field in (
-            "mcp_connected",
-            "authenticated",
-            "canvas_access",
-            "ownership_permission",
-            "generation_config_checked",
-            "budget_checked",
-        ):
+        for field in ("mcp_connected", "authenticated", "budget_checked"):
             if preflight.get(field) is not True:
                 out.add(
                     "READY_PREFLIGHT_INCOMPLETE",
                     f"preflight.{field}",
                     "READY preflight requires this check to be true",
+                )
+
+        required_caps = preflight.get("required_capabilities")
+        if isinstance(required_caps, Mapping):
+            if "canvas_access" in required_caps and preflight.get("canvas_access") is not True:
+                out.add(
+                    "READY_PREFLIGHT_INCOMPLETE",
+                    "preflight.canvas_access",
+                    "required Canvas access must be positively verified",
+                )
+            if "canvas_ownership" in required_caps and preflight.get("ownership_permission") is not True:
+                out.add(
+                    "READY_PREFLIGHT_INCOMPLETE",
+                    "preflight.ownership_permission",
+                    "required Canvas ownership/mutation permission must be positively verified",
+                )
+            if "generation_config" in required_caps and preflight.get("generation_config_checked") is not True:
+                out.add(
+                    "READY_PREFLIGHT_INCOMPLETE",
+                    "preflight.generation_config_checked",
+                    "required generation configuration must be checked",
                 )
 
     return out.result()
@@ -489,8 +542,7 @@ def validate_capabilities(snapshot: Mapping[str, Any]) -> ValidationResult:
             continue
         by_id[str(cap_id)] = cap
 
-        status = cap.get("status")
-        if status == "VERIFIED_LIVE":
+        if cap.get("status") == "VERIFIED_LIVE":
             if cap.get("source") != "LIVE_MCP":
                 out.add(
                     "VERIFIED_LIVE_SOURCE",
