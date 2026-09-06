@@ -1,0 +1,2 @@
+Synthetic Topview style fixture: REF_STYLE_MASTER
+Cinematic social-video quality target for contract tests only.
