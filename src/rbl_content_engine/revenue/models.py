@@ -45,6 +45,18 @@ NUMERIC_ANALYTICS_FIELDS = {
     "sales",
 }
 
+AUDIENCE_METRICS = {
+    "views",
+    "impressions",
+    "watch_time_minutes",
+    "average_view_duration_seconds",
+    "likes",
+    "comments",
+    "shares",
+    "subscribers_gained",
+}
+
+COMMERCIAL_METRICS = {"revenue", "clicks", "leads", "sales"}
 DIRECTIONS = {"AT_LEAST", "AT_MOST"}
 
 
@@ -59,12 +71,20 @@ class ResearchSnapshot:
 
 
 @dataclass(frozen=True)
+class MetricTarget:
+    metric: str
+    target: float
+    direction: str
+    currency: str | None = None
+
+
+@dataclass(frozen=True)
 class Hypothesis:
     audience: str
     hook: str
-    primary_metric: str
-    target: float
-    direction: str
+    evaluation_after_days: int
+    audience_target: MetricTarget
+    commercial_target: MetricTarget | None = None
 
 
 @dataclass(frozen=True)
@@ -109,6 +129,12 @@ def _number(value: Any, field: str) -> float:
     return result
 
 
+def _days(value: Any, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 365:
+        raise ManifestError(f"{field} must be an integer from 0 to 365.")
+    return value
+
+
 def _resolve_inside(workspace: Path, relative: str, field: str) -> Path:
     candidate = (workspace / relative).resolve()
     root = workspace.resolve()
@@ -119,6 +145,30 @@ def _resolve_inside(workspace: Path, relative: str, field: str) -> Path:
     if not candidate.is_file():
         raise ManifestError(f"{field} does not exist: {relative}")
     return candidate
+
+
+def _metric_target(raw: Any, field: str, allowed_metrics: set[str]) -> MetricTarget:
+    if not isinstance(raw, dict):
+        raise ManifestError(f"{field} is required.")
+    metric = _nonempty(raw.get("metric"), f"{field}.metric")
+    if metric not in allowed_metrics:
+        raise ManifestError(
+            f"{field}.metric must be one of: {', '.join(sorted(allowed_metrics))}."
+        )
+    direction = _nonempty(raw.get("direction"), f"{field}.direction")
+    if direction not in DIRECTIONS:
+        raise ManifestError(f"{field}.direction must be AT_LEAST or AT_MOST.")
+    currency = raw.get("currency")
+    if metric == "revenue":
+        currency = _nonempty(currency, f"{field}.currency")
+    elif currency is not None:
+        raise ManifestError(f"{field}.currency is only valid for revenue targets.")
+    return MetricTarget(
+        metric=metric,
+        target=_number(raw.get("target"), f"{field}.target"),
+        direction=direction,
+        currency=currency,
+    )
 
 
 def load_manifest(path: str | Path, *, workspace: str | Path | None = None) -> RevenueManifest:
@@ -150,6 +200,7 @@ def load_manifest(path: str | Path, *, workspace: str | Path | None = None) -> R
         raise ManifestError("opportunities must be a non-empty array.")
 
     seen_ids: set[str] = set()
+    seen_content_ids: set[str] = set()
     opportunities: list[Opportunity] = []
     for index, raw in enumerate(raw_opportunities):
         if not isinstance(raw, dict):
@@ -176,21 +227,30 @@ def load_manifest(path: str | Path, *, workspace: str | Path | None = None) -> R
             for factor in ALL_FACTORS
         }
 
-        raw_notes = raw.get("factor_notes", {})
+        raw_notes = raw.get("factor_notes")
         if not isinstance(raw_notes, dict):
-            raise ManifestError(f"{opportunity_id}.factor_notes must be an object.")
-        factor_notes: dict[str, str] = {}
-        for factor, note in raw_notes.items():
-            if factor not in ALL_FACTORS:
-                raise ManifestError(f"{opportunity_id}.factor_notes has unknown factor {factor}.")
-            factor_notes[factor] = _nonempty(
-                note, f"{opportunity_id}.factor_notes.{factor}"
-            )
+            raise ManifestError(f"{opportunity_id}.factor_notes is required.")
+        missing_notes = [factor for factor in ALL_FACTORS if factor not in raw_notes]
+        extra_notes = [factor for factor in raw_notes if factor not in ALL_FACTORS]
+        if missing_notes or extra_notes:
+            detail = []
+            if missing_notes:
+                detail.append(f"missing {', '.join(missing_notes)}")
+            if extra_notes:
+                detail.append(f"unknown {', '.join(extra_notes)}")
+            raise ManifestError(f"{opportunity_id}.factor_notes: {'; '.join(detail)}.")
+        factor_notes = {
+            factor: _nonempty(raw_notes[factor], f"{opportunity_id}.factor_notes.{factor}")
+            for factor in ALL_FACTORS
+        }
 
         raw_routes = raw.get("monetization_routes")
         if not isinstance(raw_routes, list) or not raw_routes:
             raise ManifestError(f"{opportunity_id}.monetization_routes is required.")
-        routes = tuple(_nonempty(route, f"{opportunity_id}.monetization_routes") for route in raw_routes)
+        routes = tuple(
+            _nonempty(route, f"{opportunity_id}.monetization_routes")
+            for route in raw_routes
+        )
         unknown_routes = [route for route in routes if route not in MONETIZATION_ROUTES]
         if unknown_routes:
             raise ManifestError(
@@ -204,21 +264,6 @@ def load_manifest(path: str | Path, *, workspace: str | Path | None = None) -> R
         raw_hypothesis = raw.get("hypothesis")
         if not isinstance(raw_hypothesis, dict):
             raise ManifestError(f"{opportunity_id}.hypothesis is required.")
-        metric = _nonempty(
-            raw_hypothesis.get("primary_metric"),
-            f"{opportunity_id}.hypothesis.primary_metric",
-        )
-        if metric not in NUMERIC_ANALYTICS_FIELDS:
-            raise ManifestError(
-                f"{opportunity_id}.hypothesis.primary_metric must be a supported numeric analytics field."
-            )
-        direction = _nonempty(
-            raw_hypothesis.get("direction"), f"{opportunity_id}.hypothesis.direction"
-        )
-        if direction not in DIRECTIONS:
-            raise ManifestError(
-                f"{opportunity_id}.hypothesis.direction must be AT_LEAST or AT_MOST."
-            )
         hypothesis = Hypothesis(
             audience=_nonempty(
                 raw_hypothesis.get("audience"), f"{opportunity_id}.hypothesis.audience"
@@ -226,16 +271,32 @@ def load_manifest(path: str | Path, *, workspace: str | Path | None = None) -> R
             hook=_nonempty(
                 raw_hypothesis.get("hook"), f"{opportunity_id}.hypothesis.hook"
             ),
-            primary_metric=metric,
-            target=_number(
-                raw_hypothesis.get("target"), f"{opportunity_id}.hypothesis.target"
+            evaluation_after_days=_days(
+                raw_hypothesis.get("evaluation_after_days"),
+                f"{opportunity_id}.hypothesis.evaluation_after_days",
             ),
-            direction=direction,
+            audience_target=_metric_target(
+                raw_hypothesis.get("audience_target"),
+                f"{opportunity_id}.hypothesis.audience_target",
+                AUDIENCE_METRICS,
+            ),
+            commercial_target=(
+                _metric_target(
+                    raw_hypothesis.get("commercial_target"),
+                    f"{opportunity_id}.hypothesis.commercial_target",
+                    COMMERCIAL_METRICS,
+                )
+                if raw_hypothesis.get("commercial_target") is not None
+                else None
+            ),
         )
 
         content_id = raw.get("content_id")
         if content_id is not None:
             content_id = _nonempty(content_id, f"{opportunity_id}.content_id")
+            if content_id in seen_content_ids:
+                raise ManifestError(f"Duplicate content_id across opportunities: {content_id}")
+            seen_content_ids.add(content_id)
 
         opportunities.append(
             Opportunity(
