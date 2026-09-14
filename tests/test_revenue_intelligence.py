@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import json
 from pathlib import Path
 import tempfile
@@ -10,6 +9,7 @@ from rbl_content_engine.revenue.analytics import load_analytics
 from rbl_content_engine.revenue.models import (
     Hypothesis,
     ManifestError,
+    MetricTarget,
     Opportunity,
     load_manifest,
 )
@@ -33,11 +33,10 @@ class RevenueIntelligenceTests(unittest.TestCase):
         self.assertEqual(penalty, 4.0)
         self.assertEqual(final, 88.0)
         ranked = rank_opportunities(manifest.opportunities)
-        self.assertEqual([item.id for item in ranked], [
-            "opp-event-ops-long",
-            "opp-build-short",
-            "opp-review-guide",
-        ])
+        self.assertEqual(
+            [item.id for item in ranked],
+            ["opp-event-ops-long", "opp-build-short", "opp-review-guide"],
+        )
         self.assertEqual([item.final_score for item in ranked], [88.0, 75.0, 66.0])
 
     def test_invalid_factor_range_fails_closed(self):
@@ -49,6 +48,15 @@ class RevenueIntelligenceTests(unittest.TestCase):
             with self.assertRaisesRegex(ManifestError, "0 to 5"):
                 load_manifest(path, workspace=ROOT)
 
+    def test_every_factor_requires_a_note(self):
+        data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        del data["opportunities"][0]["factor_notes"]["risk"]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(ManifestError, "factor_notes: missing risk"):
+                load_manifest(path, workspace=ROOT)
+
     def test_unknown_monetization_route_fails_closed(self):
         data = json.loads(MANIFEST.read_text(encoding="utf-8"))
         data["opportunities"][0]["monetization_routes"] = ["MAGIC_MONEY"]
@@ -58,13 +66,23 @@ class RevenueIntelligenceTests(unittest.TestCase):
             with self.assertRaisesRegex(ManifestError, "unknown monetization"):
                 load_manifest(path, workspace=ROOT)
 
+    def test_duplicate_content_id_across_opportunities_fails_closed(self):
+        data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        data["opportunities"][2]["content_id"] = data["opportunities"][0]["content_id"]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(ManifestError, "Duplicate content_id"):
+                load_manifest(path, workspace=ROOT)
+
     def test_ranking_preserves_input_order_on_ties(self):
         hypothesis = Hypothesis(
             audience="audience",
             hook="hook",
-            primary_metric="views",
-            target=10,
-            direction="AT_LEAST",
+            evaluation_after_days=7,
+            audience_target=MetricTarget(
+                metric="views", target=10, direction="AT_LEAST"
+            ),
         )
         factors = {
             "demand_signal": 3,
@@ -75,6 +93,7 @@ class RevenueIntelligenceTests(unittest.TestCase):
             "monetization_fit": 3,
             "risk": 1,
         }
+        notes = {factor: f"Reason for {factor}" for factor in factors}
         opportunities = [
             Opportunity(
                 id="first",
@@ -82,7 +101,7 @@ class RevenueIntelligenceTests(unittest.TestCase):
                 platform="youtube",
                 format="long_form",
                 factors=dict(factors),
-                factor_notes={},
+                factor_notes=dict(notes),
                 monetization_routes=("NONE",),
                 hypothesis=hypothesis,
                 input_index=0,
@@ -93,7 +112,7 @@ class RevenueIntelligenceTests(unittest.TestCase):
                 platform="youtube",
                 format="long_form",
                 factors=dict(factors),
-                factor_notes={},
+                factor_notes=dict(notes),
                 monetization_routes=("NONE",),
                 hypothesis=hypothesis,
                 input_index=1,
@@ -110,20 +129,56 @@ class RevenueIntelligenceTests(unittest.TestCase):
             self.assertIn("research/platforms/2026-08-21/platforms.json", content, name)
             self.assertIn("2026-08-21", content, name)
 
-    def test_csv_aliases_extra_columns_and_observations(self):
+    def test_csv_aliases_extra_columns_and_dual_outcomes(self):
         analytics = load_analytics(ANALYTICS)
         self.assertEqual(analytics["yt-event-ops-001"]["views"], 4200)
-        self.assertEqual(analytics["yt-event-ops-001"]["watch_time_minutes"], 1380.0)
+        self.assertEqual(
+            analytics["yt-event-ops-001"]["watch_time_minutes"], 1380.0
+        )
+        self.assertEqual(
+            analytics["yt-event-ops-001"]["observed_at"],
+            "2026-09-18T10:00:00+08:00",
+        )
         self.assertNotIn("Extra Column", analytics["yt-event-ops-001"])
 
         outputs = build_outputs(self.manifest(), analytics)
         hypotheses = json.loads(outputs["hypotheses.json"])["hypotheses"]
         by_id = {item["opportunity_id"]: item for item in hypotheses}
-        self.assertEqual(by_id["opp-event-ops-long"]["observation_status"], "TARGET_MET")
-        self.assertEqual(by_id["opp-build-short"]["observation_status"], "TARGET_MISSED")
-        self.assertEqual(by_id["opp-review-guide"]["observation_status"], "UNOBSERVED")
 
-    def test_at_most_hypothesis(self):
+        long_form = by_id["opp-event-ops-long"]
+        self.assertEqual(long_form["observation_status"], "EVALUATED")
+        self.assertEqual(long_form["audience_target"]["status"], "TARGET_MET")
+        self.assertEqual(long_form["commercial_target"]["status"], "TARGET_MET")
+        self.assertEqual(long_form["commercial_target"]["observed_value"], 9)
+
+        short = by_id["opp-build-short"]
+        self.assertEqual(short["observation_status"], "EVALUATED")
+        self.assertEqual(short["audience_target"]["status"], "TARGET_MISSED")
+        self.assertEqual(short["commercial_target"]["status"], "TARGET_MET")
+
+        review = by_id["opp-review-guide"]
+        self.assertEqual(review["observation_status"], "UNOBSERVED")
+        self.assertEqual(review["audience_target"]["status"], "UNOBSERVED")
+        self.assertEqual(review["commercial_target"]["status"], "UNOBSERVED")
+
+    def test_window_pending_does_not_grade_targets_early(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "analytics.csv"
+            path.write_text(
+                "content_id,platform,published_at,observed_at,views,watch_time_minutes,leads\n"
+                "yt-event-ops-001,youtube,2026-09-10T10:00:00+08:00,2026-09-12T10:00:00+08:00,3000,800,4\n",
+                encoding="utf-8",
+            )
+            observation = json.loads(
+                build_outputs(self.manifest(), load_analytics(path))["hypotheses.json"]
+            )["hypotheses"][0]
+            self.assertEqual(observation["observation_status"], "WINDOW_PENDING")
+            self.assertEqual(observation["audience_target"]["status"], "WINDOW_PENDING")
+            self.assertEqual(
+                observation["commercial_target"]["status"], "WINDOW_PENDING"
+            )
+
+    def test_at_most_target(self):
         manifest = self.manifest()
         original = manifest.opportunities[0]
         modified = Opportunity(
@@ -137,9 +192,10 @@ class RevenueIntelligenceTests(unittest.TestCase):
             hypothesis=Hypothesis(
                 audience=original.hypothesis.audience,
                 hook=original.hypothesis.hook,
-                primary_metric="views",
-                target=5000,
-                direction="AT_MOST",
+                evaluation_after_days=7,
+                audience_target=MetricTarget(
+                    metric="views", target=5000, direction="AT_MOST"
+                ),
             ),
             content_id=original.content_id,
             input_index=original.input_index,
@@ -149,48 +205,30 @@ class RevenueIntelligenceTests(unittest.TestCase):
             research_snapshot=manifest.research_snapshot,
             opportunities=(modified,),
         )
-        outputs = build_outputs(altered, load_analytics(ANALYTICS))
-        hypothesis = json.loads(outputs["hypotheses.json"])["hypotheses"][0]
-        self.assertEqual(hypothesis["observation_status"], "TARGET_MET")
+        hypothesis = json.loads(
+            build_outputs(altered, load_analytics(ANALYTICS))["hypotheses.json"]
+        )["hypotheses"][0]
+        self.assertEqual(hypothesis["audience_target"]["status"], "TARGET_MET")
 
-    def test_missing_matching_metric_yields_no_matching_data(self):
+    def test_missing_matching_metric_yields_target_no_matching_data(self):
         manifest = self.manifest()
         analytics = load_analytics(ANALYTICS)
         analytics["yt-event-ops-001"].pop("leads", None)
-        original = manifest.opportunities[0]
-        modified = Opportunity(
-            id=original.id,
-            topic=original.topic,
-            platform=original.platform,
-            format=original.format,
-            factors=original.factors,
-            factor_notes=original.factor_notes,
-            monetization_routes=original.monetization_routes,
-            hypothesis=Hypothesis(
-                audience=original.hypothesis.audience,
-                hook=original.hypothesis.hook,
-                primary_metric="leads",
-                target=5,
-                direction="AT_LEAST",
-            ),
-            content_id=original.content_id,
-            input_index=original.input_index,
+        hypothesis = json.loads(
+            build_outputs(manifest, analytics)["hypotheses.json"]
+        )["hypotheses"][0]
+        self.assertEqual(hypothesis["observation_status"], "EVALUATED")
+        self.assertEqual(hypothesis["audience_target"]["status"], "TARGET_MET")
+        self.assertEqual(
+            hypothesis["commercial_target"]["status"], "NO_MATCHING_DATA"
         )
-        altered = type(manifest)(
-            version=manifest.version,
-            research_snapshot=manifest.research_snapshot,
-            opportunities=(modified,),
-        )
-        hypothesis = json.loads(build_outputs(altered, analytics)["hypotheses.json"])[
-            "hypotheses"
-        ][0]
-        self.assertEqual(hypothesis["observation_status"], "NO_MATCHING_DATA")
 
     def test_missing_required_csv_field_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "analytics.csv"
             path.write_text(
-                "Video ID,Platform,Publish Date\nabc,youtube,2026-09-10\n",
+                "Video ID,Platform,Publish Date,View Count\n"
+                "abc,youtube,2026-09-10T10:00:00+08:00,10\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ManifestError, "missing required"):
@@ -200,8 +238,8 @@ class RevenueIntelligenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "analytics.csv"
             path.write_text(
-                "Video ID,Platform,Publish Date,Views,View Count\n"
-                "abc,youtube,2026-09-10,10,10\n",
+                "Video ID,Platform,Publish Date,Observed At,Views,View Count\n"
+                "abc,youtube,2026-09-10T10:00:00+08:00,2026-09-18T10:00:00+08:00,10,10\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ManifestError, "both map to views"):
@@ -211,31 +249,99 @@ class RevenueIntelligenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "analytics.csv"
             path.write_text(
-                "Video ID,Platform,Publish Date,Views\nabc,youtube,2026-09-10,-1\n",
+                "Video ID,Platform,Publish Date,Observed At,Views\n"
+                "abc,youtube,2026-09-10T10:00:00+08:00,2026-09-18T10:00:00+08:00,-1\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ManifestError, "non-negative"):
                 load_analytics(path)
 
-    def test_duplicate_content_rows_aggregate_additive_metrics(self):
+    def test_duplicate_content_rows_fail_closed_instead_of_double_counting(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "analytics.csv"
-            with path.open("w", encoding="utf-8", newline="") as handle:
-                writer = csv.writer(handle)
-                writer.writerow([
-                    "content_id",
-                    "platform",
-                    "published_at",
-                    "views",
-                    "watch_time_minutes",
-                    "average_view_duration_seconds",
-                ])
-                writer.writerow(["x", "youtube", "2026-09-10", 100, 20, 12])
-                writer.writerow(["x", "youtube", "2026-09-10", 300, 70, 20])
-            analytics = load_analytics(path)
-            self.assertEqual(analytics["x"]["views"], 400)
-            self.assertEqual(analytics["x"]["watch_time_minutes"], 90.0)
-            self.assertEqual(analytics["x"]["average_view_duration_seconds"], 18.0)
+            path.write_text(
+                "content_id,platform,published_at,observed_at,views\n"
+                "x,youtube,2026-09-10T10:00:00+08:00,2026-09-18T10:00:00+08:00,100\n"
+                "x,youtube,2026-09-10T10:00:00+08:00,2026-09-19T10:00:00+08:00,150\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ManifestError, "Duplicate analytics rows"):
+                load_analytics(path)
+
+    def test_platform_mismatch_fails_closed(self):
+        analytics = load_analytics(ANALYTICS)
+        analytics["yt-event-ops-001"]["platform"] = "tiktok"
+        with self.assertRaisesRegex(ManifestError, "Platform mismatch"):
+            build_outputs(self.manifest(), analytics)
+
+    def test_revenue_target_requires_currency(self):
+        data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        data["opportunities"][0]["hypothesis"]["commercial_target"] = {
+            "metric": "revenue",
+            "target": 10,
+            "direction": "AT_LEAST",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "manifest.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(ManifestError, "currency"):
+                load_manifest(path, workspace=ROOT)
+
+    def test_revenue_currency_mismatch_fails_closed(self):
+        manifest = self.manifest()
+        original = manifest.opportunities[0]
+        modified = Opportunity(
+            id=original.id,
+            topic=original.topic,
+            platform=original.platform,
+            format=original.format,
+            factors=original.factors,
+            factor_notes=original.factor_notes,
+            monetization_routes=original.monetization_routes,
+            hypothesis=Hypothesis(
+                audience=original.hypothesis.audience,
+                hook=original.hypothesis.hook,
+                evaluation_after_days=7,
+                audience_target=original.hypothesis.audience_target,
+                commercial_target=MetricTarget(
+                    metric="revenue",
+                    target=10,
+                    direction="AT_LEAST",
+                    currency="USD",
+                ),
+            ),
+            content_id=original.content_id,
+            input_index=original.input_index,
+        )
+        altered = type(manifest)(
+            version=manifest.version,
+            research_snapshot=manifest.research_snapshot,
+            opportunities=(modified,),
+        )
+        with self.assertRaisesRegex(ManifestError, "currency mismatch"):
+            build_outputs(altered, load_analytics(ANALYTICS))
+
+    def test_observed_at_cannot_precede_publication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "analytics.csv"
+            path.write_text(
+                "content_id,platform,published_at,observed_at,views\n"
+                "x,youtube,2026-09-10T10:00:00+08:00,2026-09-09T10:00:00+08:00,100\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ManifestError, "cannot be before"):
+                load_analytics(path)
+
+    def test_timestamps_require_timezone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "analytics.csv"
+            path.write_text(
+                "content_id,platform,published_at,observed_at,views\n"
+                "x,youtube,2026-09-10T10:00:00,2026-09-18T10:00:00,100\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ManifestError, "timezone offset"):
+                load_analytics(path)
 
     def test_outputs_are_deterministic_and_do_not_claim_guaranteed_performance(self):
         manifest = self.manifest()
@@ -247,6 +353,8 @@ class RevenueIntelligenceTests(unittest.TestCase):
         self.assertNotIn("guaranteed views", combined)
         self.assertNotIn("guaranteed revenue", combined)
         self.assertIn("does not establish causality", combined)
+        self.assertIn("audience target", combined)
+        self.assertIn("commercial target", combined)
 
     def test_research_snapshot_cannot_escape_workspace(self):
         data = json.loads(MANIFEST.read_text(encoding="utf-8"))
