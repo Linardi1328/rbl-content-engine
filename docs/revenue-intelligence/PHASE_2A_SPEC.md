@@ -11,11 +11,11 @@ The durable capability is:
 ```text
 dated market / platform snapshot
 + human-scored content opportunity
-+ optional manually exported first-party analytics
++ optional manually exported first-party analytics snapshot
 -> deterministic opportunity ranking
 -> explicit monetization routes
--> content hypothesis registry
--> observed performance comparison
+-> audience + commercial hypothesis registry
+-> fixed-window observed performance comparison
 -> human-readable learning report
 -> HUMAN DECISION
 ```
@@ -39,30 +39,17 @@ Phase 2A does **not**:
 
 ## Evidence domains remain separate
 
-Phase 2A introduces a third decision domain without collapsing the two existing ones.
-
 ### Project evidence
 
-Answers: **what factual claims are allowed?**
-
-Authority remains the local project-evidence / ProofLab path. Revenue or audience data can never upgrade an unsupported project claim.
+Answers: **what factual claims are allowed?** Revenue or audience data can never upgrade an unsupported project claim.
 
 ### Platform research
 
-Answers: **how might the story be packaged for a platform?**
-
-Authority remains a dated local snapshot with source lineage. It is heuristic strategy input, never project evidence.
+Answers: **how might the story be packaged for a platform?** Authority remains a dated local snapshot with source lineage. It is heuristic strategy input, never project evidence.
 
 ### Revenue & audience intelligence
 
-Answers: **which content opportunity is commercially worth testing, and what did we observe after publishing?**
-
-Authority is limited to:
-
-- human-scored opportunity factors with explicit lineage;
-- manually exported first-party analytics;
-- explicit monetization-route tags;
-- deterministic comparison against pre-declared hypotheses.
+Answers: **which content opportunity is commercially worth testing, and what did we observe after publishing?** Authority is limited to human-scored factors, manually exported first-party analytics, explicit monetization-route intent, and deterministic comparison against pre-declared targets.
 
 It must not be described as proof of causality or guaranteed future performance.
 
@@ -72,7 +59,19 @@ It must not be described as proof of causality or guaranteed future performance.
 
 A JSON file contains one dated research reference and one or more content opportunities.
 
-Minimum shape:
+Each opportunity contains:
+
+- unique opportunity ID;
+- optional `content_id`, unique across the manifest once assigned;
+- topic, platform and format;
+- all seven 0–5 scoring factors;
+- a non-empty rationale for **every** scoring factor, including risk;
+- one or more explicit monetization routes;
+- a fixed observation horizon in days;
+- one required audience target;
+- zero or one commercial target.
+
+Example:
 
 ```json
 {
@@ -84,7 +83,8 @@ Minimum shape:
   "opportunities": [
     {
       "id": "opp-001",
-      "topic": "How a basketball academy runs a tournament without spreadsheets",
+      "content_id": "yt-001",
+      "topic": "How a basketball tournament moves beyond spreadsheets",
       "platform": "youtube",
       "format": "long_form",
       "factors": {
@@ -97,34 +97,88 @@ Minimum shape:
         "risk": 1
       },
       "factor_notes": {
-        "demand_signal": "Based on the dated local research snapshot.",
-        "creator_fit": "Directly supported by an RBL/KHLIM build-in-public workflow."
+        "demand_signal": "Human judgment grounded in the dated local research snapshot.",
+        "creator_fit": "Direct fit with an RBL build-in-public workflow.",
+        "originality": "Sports operations plus software implementation.",
+        "production_efficiency": "Can use existing UI footage and diagrams.",
+        "evergreen_value": "The operator problem recurs across tournaments.",
+        "monetization_fit": "Can feed service and KHLIM interest.",
+        "risk": "Low when all factual claims remain evidence-backed."
       },
       "monetization_routes": ["SERVICE_LEAD", "KHLIM_LEAD"],
       "hypothesis": {
         "audience": "grassroots sports operators and builders",
         "hook": "What actually breaks when you run a tournament from spreadsheets?",
-        "primary_metric": "watch_time_minutes",
-        "target": 1200,
-        "direction": "AT_LEAST"
+        "evaluation_after_days": 7,
+        "audience_target": {
+          "metric": "watch_time_minutes",
+          "target": 1200,
+          "direction": "AT_LEAST"
+        },
+        "commercial_target": {
+          "metric": "leads",
+          "target": 5,
+          "direction": "AT_LEAST"
+        }
       }
     }
   ]
 }
 ```
 
-Factor scores are integers from 0 to 5. They are explicit human judgments, not model-invented measurements.
+Factor scores are explicit human judgments, not model-invented measurements. Requiring a rationale for every factor makes later rescoring auditable instead of hiding subjective changes.
 
-### 2. Optional first-party analytics CSV
+### 2. Audience and commercial targets
 
-Phase 2A accepts a manually exported local CSV. It must work without platform credentials.
+The required audience target may use:
+
+- `views`
+- `impressions`
+- `watch_time_minutes`
+- `average_view_duration_seconds`
+- `likes`
+- `comments`
+- `shares`
+- `subscribers_gained`
+
+The optional commercial target may use:
+
+- `clicks`
+- `leads`
+- `sales`
+- `revenue`
+
+Every target specifies `AT_LEAST` or `AT_MOST` and a non-negative numeric target.
+
+A `revenue` target must also specify `currency`. Observed revenue with a missing or different currency fails closed instead of being compared as if currencies were interchangeable.
+
+### 3. Fixed evaluation horizon
+
+Every hypothesis declares `evaluation_after_days` from 0 to 365.
+
+The system does not grade a target before:
+
+```text
+published_at + evaluation_after_days
+```
+
+If the analytics snapshot is earlier than that point, observation status is `WINDOW_PENDING` and both target outcomes remain pending even if current values already cross the target.
+
+This prevents a 24-hour observation and a 30-day observation from being treated as equivalent experiments.
+
+### 4. Optional first-party analytics CSV
+
+Phase 2A accepts a manually exported local cumulative snapshot. It must work without platform credentials.
 
 Required canonical fields:
 
 - `content_id`
 - `platform`
 - `published_at`
+- `observed_at`
 - `views`
+
+`published_at` and `observed_at` must be ISO datetimes with timezone offsets. `observed_at` cannot precede `published_at`.
 
 Optional canonical fields:
 
@@ -143,11 +197,9 @@ Optional canonical fields:
 
 Common harmless header aliases may map deterministically to canonical fields. Extra columns are ignored. Ambiguous duplicate mappings or missing required columns fail closed.
 
-All numeric metrics must be non-negative. Revenue is observational first-party data, not a guarantee or causal attribution.
+Phase 2A accepts **one cumulative analytics row per `content_id`**. Duplicate rows fail closed. It does not guess whether duplicate exports are cumulative snapshots, overlapping periods, or disjoint segments, because summing the wrong shape can silently double-count performance.
 
-### 3. Optional opportunity-to-content mapping
-
-An opportunity may include `content_id` once a human has published a piece of content manually. Before publication, the hypothesis remains `UNOBSERVED`.
+All numeric metrics must be non-negative.
 
 ## Opportunity scoring
 
@@ -170,21 +222,11 @@ Risk is a separate 0–5 penalty:
 final_score = clamp(weighted_positive_score - (risk * 4), 0, 100)
 ```
 
-Persist/display:
+Persist/display raw factors, factor rationales, scoring version, weighted score before risk, risk penalty, final score and deterministic rank. Ties preserve opportunity input order. Never invent a hidden tie-break.
 
-- raw factors;
-- factor notes;
-- scoring version;
-- weighted score before risk;
-- risk penalty;
-- final score;
-- deterministic rank.
-
-Ties preserve opportunity input order. Never invent a hidden tie-break.
+Do not tune weights from a handful of observations. A later scoring version requires deliberate human review and a version change.
 
 ## Monetization routes
-
-Phase 2A supports explicit route tags only; it does not decide eligibility or execute monetization.
 
 Allowed V1 tags:
 
@@ -197,52 +239,40 @@ Allowed V1 tags:
 - `KHLIM_LEAD`
 - `NONE`
 
-A content opportunity can have multiple routes. Route tags describe the intended commercial path and must not imply guaranteed revenue.
+Route tags describe intended commercial paths only. They do not establish platform eligibility, attribution, or guaranteed revenue.
 
-## Hypothesis registry
+## Observation contract
 
-Every ranked opportunity produces a machine-readable hypothesis record containing at minimum:
+The top-level observation state is one of:
 
-- opportunity ID;
-- optional content ID;
-- topic;
-- platform/format;
-- audience;
-- hook;
-- monetization routes;
-- primary metric;
-- target;
-- direction;
-- opportunity score and scoring version;
-- research snapshot path/date;
-- observation status.
+- `UNOBSERVED` — no `content_id` has been assigned;
+- `NO_MATCHING_DATA` — content exists in the manifest but no analytics snapshot matches;
+- `WINDOW_PENDING` — matching analytics exist, but the declared evaluation horizon has not elapsed;
+- `EVALUATED` — the observation horizon has elapsed and declared targets may be graded.
 
-Allowed observation states:
+Each audience/commercial target then has its own status:
 
 - `UNOBSERVED`
 - `NO_MATCHING_DATA`
+- `WINDOW_PENDING`
 - `TARGET_MET`
 - `TARGET_MISSED`
 
-Human publication/approval is external to this module.
+This prevents an audience result from being mistaken for a commercial result. A Short can miss a view target while still meeting a lead target, or vice versa.
 
-## Performance comparison
+When matching analytics exist:
 
-When matching analytics exist, compare only the declared primary metric to the declared target.
+1. `content_id` must match;
+2. analytics platform must match the opportunity platform, case-insensitively;
+3. the observation window must have elapsed before grading;
+4. each declared target compares only its own metric;
+5. revenue currency must match exactly, case-insensitively.
 
-Supported V1 primary metrics are numeric analytics fields from the canonical schema.
-
-- `AT_LEAST`: observed >= target -> `TARGET_MET`
-- `AT_MOST`: observed <= target -> `TARGET_MET`
-- otherwise -> `TARGET_MISSED`
-
-The learning report may describe an observed result but must not say a hook, format, platform, or monetization route **caused** the result.
-
-If multiple analytics rows share the same `content_id`, aggregate additive metrics by sum. For duration-like metrics, use a deterministic weighted or documented rule; Phase 2A may reject ambiguous multi-row duration aggregation instead of guessing.
+The learning report may describe observations but must never say the hook, format, platform, or monetization route **caused** them.
 
 ## Outputs
 
-Given an opportunity manifest and optional analytics CSV, generate deterministic artifacts such as:
+Generate deterministic artifacts:
 
 ```text
 output/
@@ -255,11 +285,20 @@ output/
 
 The Markdown files are human review surfaces. JSON is the reusable integration contract.
 
-Every artifact must retain the research snapshot path/date and make clear that scores are decision aids, not forecasts.
+Every artifact retains research snapshot path/date and states that scores/observations are decision aids rather than forecasts or causal proof.
+
+The learning artifacts retain:
+
+- opportunity score/version;
+- audience and hook;
+- monetization-route intent;
+- evaluation horizon;
+- published, observed and evaluation-due timestamps when analytics match;
+- separate audience target/outcome;
+- separate commercial target/outcome;
+- observed metrics snapshot.
 
 ## CLI
-
-Target interface:
 
 ```bash
 PYTHONPATH=src python -m rbl_content_engine.revenue \
@@ -268,67 +307,53 @@ PYTHONPATH=src python -m rbl_content_engine.revenue \
   --output examples/revenue-intelligence/output
 ```
 
-`--analytics` is optional. The command must require no network access and no secrets.
-
-## Required implementation modules
-
-Keep the implementation small and dependency-free. A reasonable shape is:
-
-```text
-src/rbl_content_engine/revenue/
-  __init__.py
-  models.py
-  scoring.py
-  analytics.py
-  reporting.py
-  __main__.py
-```
-
-Equivalent smaller organization is acceptable.
+`--analytics` is optional. The command requires no network access and no secrets.
 
 ## Required tests
 
 At minimum prove:
 
-1. valid factor scores produce the documented deterministic final score;
-2. risk reduces the score exactly as documented;
-3. invalid factor ranges fail closed;
+1. documented scoring and risk penalty are exact;
+2. invalid factor ranges fail closed;
+3. every factor requires a rationale;
 4. deterministic ranking preserves input order on ties;
 5. unknown monetization routes fail closed;
-6. research snapshot path/date are retained in all outputs;
-7. opportunity analytics never become project evidence;
-8. CSV header aliases normalize correctly;
-9. extra CSV columns are ignored;
-10. missing required CSV fields fail closed;
-11. duplicate/ambiguous canonical mappings fail closed;
+6. assigned content IDs are unique across opportunities;
+7. research snapshot path/date remain in outputs;
+8. CSV aliases normalize and irrelevant columns are ignored;
+9. required timestamp/metric fields are enforced;
+10. timestamps require timezone offsets and `observed_at >= published_at`;
+11. duplicate canonical column mappings fail closed;
 12. negative metrics fail closed;
-13. a matching `content_id` evaluates `AT_LEAST` correctly;
-14. `AT_MOST` works correctly;
-15. missing content data yields `NO_MATCHING_DATA`;
-16. unpublished/unmapped opportunities remain `UNOBSERVED`;
-17. output ordering is stable;
-18. identical inputs produce byte-for-byte identical generated files;
-19. generated reports contain no guaranteed-performance language;
-20. no network call, credentials, database, publishing, or external side effect is required.
+13. duplicate content rows fail closed instead of being summed;
+14. platform mismatch fails closed;
+15. the evaluation horizon produces `WINDOW_PENDING` before grading;
+16. audience and commercial targets can produce different outcomes;
+17. missing target metrics yield target-level `NO_MATCHING_DATA`;
+18. `AT_MOST` works correctly;
+19. revenue targets require currency and mismatches fail closed;
+20. unpublished/unmapped opportunities remain `UNOBSERVED`;
+21. identical inputs produce byte-for-byte identical artifacts;
+22. reports contain no guaranteed-performance or causal language;
+23. no network call, credentials, database, publishing, or external side effect is required.
 
 ## Acceptance criteria
 
 Phase 2A is complete when a checked-in synthetic/public-safe example can:
 
 1. rank several content opportunities using the versioned score;
-2. show why each score exists;
+2. show why every factor score exists;
 3. retain monetization-route intent;
-4. produce a hypothesis registry before publishing;
-5. optionally ingest a manually exported analytics CSV;
-6. compare observed performance with the declared hypothesis;
-7. produce a concise human learning report;
-8. remain fully offline and deterministic;
-9. pass `make check` and `make test` on Python 3.11/3.12/3.13;
-10. leave Phase 0 factual verification and human approval boundaries intact.
+4. produce separate audience/commercial hypotheses before publishing;
+5. define a fixed observation horizon;
+6. optionally ingest one cumulative first-party analytics snapshot per content item;
+7. compare mature observations with both declared targets;
+8. distinguish audience success from commercial success;
+9. remain fully offline and deterministic;
+10. pass `make check` and `make test` on Python 3.11/3.12/3.13;
+11. leave Phase 0 factual verification and human approval boundaries intact.
 
 ## Integration path
-
-Validated reusable capability should later feed the existing RBL content workflow as:
 
 ```text
 candidate content ideas
@@ -337,8 +362,8 @@ candidate content ideas
 -> ranked human-reviewed opportunity
 -> existing evidence verification + platform treatment pipeline
 -> manual publication
--> manually exported first-party analytics
--> Revenue & Audience Intelligence learning report
+-> manually exported first-party analytics snapshot
+-> fixed-window Revenue & Audience learning report
 -> next human decision
 ```
 
@@ -346,6 +371,6 @@ Do not create a parallel content generator. Reuse the existing content engine's 
 
 ## Stop condition
 
-Stop Phase 2A after the offline ranking + hypothesis + analytics-learning loop works reliably on synthetic/public-safe fixtures.
+Stop Phase 2A after the offline ranking + dual-target hypothesis + fixed-window analytics-learning loop works reliably on synthetic/public-safe fixtures.
 
 Do **not** add live YouTube/Instagram/TikTok APIs, scheduled trend crawling, automatic publishing, automatic monetization, customer messaging, paid generation, dashboards, databases, or autonomous strategy changes in this milestone.
