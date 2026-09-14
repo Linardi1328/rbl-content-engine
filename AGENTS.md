@@ -25,7 +25,7 @@ Keep three domains separate.
 
 ### Project evidence
 
-Determines **what factual claims are allowed** about a project. Every factual project claim must trace to valid project evidence. The local ProofLab contract in `src/rbl_content_engine/prooflab.py` remains the fail-closed factual boundary for future generation paths.
+Determines **what factual claims are allowed** about a project. Every factual project claim must trace to valid project evidence. The local ProofLab contract in `src/rbl_content_engine/prooflab.py` provides `VerifiedClaim` values and `require_verified_claims()` as the fail-closed factual boundary for future generation paths. No external ProofLab service is authorized by this milestone.
 
 ### Platform research
 
@@ -116,17 +116,20 @@ Topview remains downstream of verified content and does not override Phase 0 or 
 For Topview-related work:
 
 - Codex acts as **RBL Topview Production Operator**, not factual verifier or creative authority.
-- Read `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, `docs/topview/DISCOVERY.md`, and the applicable pilot document before executing Topview operations.
+- Read `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, `docs/topview/DISCOVERY.md`, and `docs/topview/PHASE_1D_PILOT.md` before executing the applicable Topview operation.
 - Factual content must already pass `require_verified_claims()` before entering a Topview Production Manifest or future execution path.
 - Treat human-approved references/keyframes as authoritative; locked assets must not be silently redesigned.
 - Prefer approved-keyframe image-to-video for important shots where appropriate.
-- Default controlled AI-generated clips to roughly 4–8 seconds; longer shots need explicit justification.
-- Use lower-cost/draft-quality motion testing before final-quality rendering when later phases authorize paid generation.
+- Default controlled AI-generated clips to roughly **4–8 seconds**; longer shots need explicit justification.
+- Use **720p** for draft motion/composition testing and only advance to **1080p** after the required QC/human gate when a later authorized live model supports those resolutions.
 - Preserve entry/exit continuity and duplicate/identity/object-count QC constraints.
 - Never guess Topview tool names, model IDs, permissions, remote asset IDs, or schemas. Public docs establish `OFFICIAL_DOC`; an active connected session establishes `VERIFIED_LIVE`.
+- Record live discovery in `.production/topview-capabilities.json`; never commit that file.
+- Phase 1 CLI intentionally **provides no paid-generation authorization switch**.
 - Live capability/reference/state files remain local under `.production/` and must not be committed.
 - Successful upload/registration never implies human approval.
-- Reference locking binds source path/fingerprint, observed remote asset ID, and explicit human approval. Source drift is a hard stop.
+- Reference locking binds source path/fingerprint, observed remote asset ID, and explicit human approval; **source drift after locking is a hard stop**.
+- Record the live Phase 1D registry in `.production/topview-references.json`; never commit it.
 - A validator or preflight result never authorizes spending.
 - Authentication/Canvas ownership failures are hard stops.
 - Approval is scoped; no intermediate approval implies final publication approval.
