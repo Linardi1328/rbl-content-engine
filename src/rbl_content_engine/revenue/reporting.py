@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from datetime import timedelta
 import json
 from pathlib import Path
 from typing import Any
 
-from .models import RevenueManifest, SCORING_VERSION
+from .analytics import parse_timestamp
+from .models import ManifestError, MetricTarget, RevenueManifest, SCORING_VERSION
 from .scoring import RankedOpportunity, rank_opportunities
 
 DISCLAIMER = (
@@ -15,6 +17,54 @@ DISCLAIMER = (
 
 def _json_text(data: Any) -> str:
     return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+
+
+def _target_shell(target: MetricTarget | None) -> dict[str, Any] | None:
+    if target is None:
+        return None
+    return {
+        "metric": target.metric,
+        "target": target.target,
+        "direction": target.direction,
+        "currency": target.currency,
+        "status": "UNOBSERVED",
+        "observed_value": None,
+    }
+
+
+def _evaluate_target(
+    target: MetricTarget | None,
+    metrics: dict[str, Any],
+    *,
+    window_status: str,
+) -> dict[str, Any] | None:
+    result = _target_shell(target)
+    if target is None or result is None:
+        return None
+    observed = metrics.get(target.metric)
+    result["observed_value"] = observed
+    if window_status == "WINDOW_PENDING":
+        result["status"] = "WINDOW_PENDING"
+        return result
+    if observed is None:
+        result["status"] = "NO_MATCHING_DATA"
+        return result
+    if target.metric == "revenue":
+        observed_currency = metrics.get("currency")
+        if not observed_currency:
+            raise ManifestError(
+                "Revenue analytics require currency when evaluating a revenue target."
+            )
+        if observed_currency.casefold() != (target.currency or "").casefold():
+            raise ManifestError(
+                f"Revenue currency mismatch: target uses {target.currency}, analytics use {observed_currency}."
+            )
+    if target.direction == "AT_LEAST":
+        met = float(observed) >= target.target
+    else:
+        met = float(observed) <= target.target
+    result["status"] = "TARGET_MET" if met else "TARGET_MISSED"
+    return result
 
 
 def _observation(
@@ -33,9 +83,7 @@ def _observation(
         "audience": hypothesis.audience,
         "hook": hypothesis.hook,
         "monetization_routes": list(opportunity.monetization_routes),
-        "primary_metric": hypothesis.primary_metric,
-        "target": hypothesis.target,
-        "direction": hypothesis.direction,
+        "evaluation_after_days": hypothesis.evaluation_after_days,
         "opportunity_score": ranked.final_score,
         "scoring_version": SCORING_VERSION,
         "research_snapshot": {
@@ -43,26 +91,53 @@ def _observation(
             "research_date": manifest.research_snapshot.research_date,
         },
         "observation_status": "UNOBSERVED",
-        "observed_value": None,
+        "published_at": None,
+        "observed_at": None,
+        "evaluation_due_at": None,
+        "audience_target": _target_shell(hypothesis.audience_target),
+        "commercial_target": _target_shell(hypothesis.commercial_target),
         "observed_metrics": None,
     }
     if not opportunity.content_id:
         return result
     if analytics is None or opportunity.content_id not in analytics:
         result["observation_status"] = "NO_MATCHING_DATA"
+        if result["audience_target"]:
+            result["audience_target"]["status"] = "NO_MATCHING_DATA"
+        if result["commercial_target"]:
+            result["commercial_target"]["status"] = "NO_MATCHING_DATA"
         return result
+
     metrics = analytics[opportunity.content_id]
-    observed = metrics.get(hypothesis.primary_metric)
-    result["observed_metrics"] = metrics
-    if observed is None:
-        result["observation_status"] = "NO_MATCHING_DATA"
-        return result
-    result["observed_value"] = observed
-    if hypothesis.direction == "AT_LEAST":
-        met = float(observed) >= hypothesis.target
-    else:
-        met = float(observed) <= hypothesis.target
-    result["observation_status"] = "TARGET_MET" if met else "TARGET_MISSED"
+    if str(metrics.get("platform", "")).casefold() != opportunity.platform.casefold():
+        raise ManifestError(
+            f"Platform mismatch for content_id {opportunity.content_id}: opportunity is {opportunity.platform}, analytics are {metrics.get('platform')}."
+        )
+
+    published_at = parse_timestamp(
+        str(metrics["published_at"]), f"{opportunity.content_id}.published_at"
+    )
+    observed_at = parse_timestamp(
+        str(metrics["observed_at"]), f"{opportunity.content_id}.observed_at"
+    )
+    evaluation_due = published_at + timedelta(days=hypothesis.evaluation_after_days)
+    window_status = "WINDOW_PENDING" if observed_at < evaluation_due else "EVALUATED"
+
+    result.update(
+        {
+            "observation_status": window_status,
+            "published_at": published_at.isoformat(),
+            "observed_at": observed_at.isoformat(),
+            "evaluation_due_at": evaluation_due.isoformat(),
+            "observed_metrics": metrics,
+            "audience_target": _evaluate_target(
+                hypothesis.audience_target, metrics, window_status=window_status
+            ),
+            "commercial_target": _evaluate_target(
+                hypothesis.commercial_target, metrics, window_status=window_status
+            ),
+        }
+    )
     return result
 
 
@@ -113,10 +188,24 @@ def _ranking_markdown(
             ]
         )
         for factor, value in item.factors.items():
-            note = item.factor_notes.get(factor, "No note supplied.")
-            lines.append(f"- `{factor}`: {value}/5 — {note}")
+            lines.append(f"- `{factor}`: {value}/5 — {item.factor_notes[factor]}")
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _target_line(label: str, target: dict[str, Any] | None) -> str:
+    if target is None:
+        return f"- {label}: not declared"
+    currency = f" {target['currency']}" if target.get("currency") else ""
+    observed = (
+        f"; observed {target['observed_value']}{currency}"
+        if target.get("observed_value") is not None
+        else ""
+    )
+    return (
+        f"- {label}: `{target['metric']}` {target['direction']} "
+        f"{target['target']}{currency} → **{target['status']}**{observed}"
+    )
 
 
 def _learning_markdown(
@@ -138,20 +227,26 @@ def _learning_markdown(
                 f"- Platform / format: {observation['platform']} / {observation['format']}",
                 f"- Opportunity score: {observation['opportunity_score']:.2f}",
                 f"- Monetization routes: {', '.join(observation['monetization_routes'])}",
-                f"- Hypothesis metric: `{observation['primary_metric']}` {observation['direction']} {observation['target']}",
+                f"- Evaluation horizon: {observation['evaluation_after_days']} day(s)",
                 f"- Observation status: **{observation['observation_status']}**",
+                _target_line("Audience target", observation["audience_target"]),
+                _target_line("Commercial target", observation["commercial_target"]),
             ]
         )
-        if observation["observed_value"] is not None:
-            lines.append(f"- Observed value: {observation['observed_value']}")
         if observation["content_id"]:
             lines.append(f"- Content ID: `{observation['content_id']}`")
         else:
             lines.append("- Content ID: not assigned; publication remains a human/manual step.")
+        if observation["published_at"]:
+            lines.append(f"- Published at: {observation['published_at']}")
+        if observation["observed_at"]:
+            lines.append(f"- Observed at: {observation['observed_at']}")
+        if observation["evaluation_due_at"]:
+            lines.append(f"- Evaluation due at: {observation['evaluation_due_at']}")
         lines.extend(
             [
                 "",
-                "Interpretation: compare the observation with the pre-declared hypothesis only. "
+                "Interpretation: compare each observation with its pre-declared target only. "
                 "Do not infer that the hook, format, platform, or monetization route caused the result.",
                 "",
             ]
