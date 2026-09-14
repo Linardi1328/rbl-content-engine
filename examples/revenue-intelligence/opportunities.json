@@ -21,21 +21,29 @@
         "risk": 1
       },
       "factor_notes": {
-        "demand_signal": "Human judgment based on the dated local platform snapshot.",
-        "creator_fit": "Directly aligned with RBL build-in-public content and a real portfolio workflow.",
+        "demand_signal": "Human judgment based on the dated local platform snapshot and recurring operator pain around manual tournament workflows.",
+        "creator_fit": "Directly aligned with RBL build-in-public content and an existing portfolio workflow.",
         "originality": "Combines sports operations and software implementation rather than generic productivity advice.",
         "production_efficiency": "Can rely heavily on screen recordings, diagrams, and existing project material.",
-        "evergreen_value": "Tournament operations and spreadsheet pain are recurring topics.",
-        "monetization_fit": "Can support service leads and KHLIM ecosystem awareness.",
-        "risk": "Low factual/reputational risk when claims stay inside verified project evidence."
+        "evergreen_value": "Tournament operations and spreadsheet pain are recurring topics rather than one-day news.",
+        "monetization_fit": "Can support service leads and KHLIM ecosystem awareness without requiring direct ad monetization.",
+        "risk": "Low factual and reputational risk when claims stay inside verified project evidence."
       },
       "monetization_routes": ["SERVICE_LEAD", "KHLIM_LEAD"],
       "hypothesis": {
         "audience": "grassroots sports operators and builders",
         "hook": "What actually breaks when you run a tournament from spreadsheets?",
-        "primary_metric": "watch_time_minutes",
-        "target": 1200,
-        "direction": "AT_LEAST"
+        "evaluation_after_days": 7,
+        "audience_target": {
+          "metric": "watch_time_minutes",
+          "target": 1200,
+          "direction": "AT_LEAST"
+        },
+        "commercial_target": {
+          "metric": "leads",
+          "target": 5,
+          "direction": "AT_LEAST"
+        }
       }
     },
     {
@@ -54,16 +62,29 @@
         "risk": 1
       },
       "factor_notes": {
+        "demand_signal": "Short build breakdowns fit the dated platform snapshot's discovery-oriented content direction.",
+        "creator_fit": "Strong fit with RBL's builder identity and existing sports-tech work.",
+        "originality": "The specific Event OS rule is differentiated, even though build-in-public Shorts are a common format.",
         "production_efficiency": "Can be cut from existing product footage with a short voiceover.",
-        "monetization_fit": "Useful primarily as discovery that can feed long-form or service interest."
+        "evergreen_value": "The implementation lesson remains useful, but short-form discovery content usually decays faster than long-form explainers.",
+        "monetization_fit": "Useful primarily as discovery that can feed long-form or service interest rather than as a high-value direct revenue unit.",
+        "risk": "Low risk when the feature claim is verified and the hook is not exaggerated."
       },
       "monetization_routes": ["SHORTS_ADS", "SERVICE_LEAD"],
       "hypothesis": {
         "audience": "builders interested in sports-tech products",
         "hook": "This one rule stopped tournament staff from breaking the bracket.",
-        "primary_metric": "views",
-        "target": 5000,
-        "direction": "AT_LEAST"
+        "evaluation_after_days": 7,
+        "audience_target": {
+          "metric": "views",
+          "target": 5000,
+          "direction": "AT_LEAST"
+        },
+        "commercial_target": {
+          "metric": "leads",
+          "target": 2,
+          "direction": "AT_LEAST"
+        }
       }
     },
     {
@@ -81,16 +102,29 @@
         "risk": 2
       },
       "factor_notes": {
-        "monetization_fit": "Potential affiliate route if a genuine first-hand product comparison exists.",
-        "risk": "Requires careful disclosure and real product evidence before publication."
+        "demand_signal": "Buying guides have durable search intent, but this specific product set has not yet been validated with first-party audience data.",
+        "creator_fit": "RBL can credibly cover creator tooling, but it is less central than build-in-public sports-tech content.",
+        "originality": "The concept is useful but structurally common unless anchored to a distinctive real workflow.",
+        "production_efficiency": "Requires real product access, comparison footage, and careful disclosure rather than only existing project assets.",
+        "evergreen_value": "Practical setup and tool-selection content can retain search value for a long period when products remain current.",
+        "monetization_fit": "Strong potential for watch-page ads and affiliate conversion if genuine first-hand comparisons exist.",
+        "risk": "Moderate disclosure and trust risk because affiliate incentives and product claims need clear evidence."
       },
       "monetization_routes": ["WATCH_PAGE_ADS", "AFFILIATE"],
       "hypothesis": {
         "audience": "creators and student builders researching practical tools",
         "hook": "What is actually worth buying for a small creator setup?",
-        "primary_metric": "clicks",
-        "target": 50,
-        "direction": "AT_LEAST"
+        "evaluation_after_days": 14,
+        "audience_target": {
+          "metric": "views",
+          "target": 3000,
+          "direction": "AT_LEAST"
+        },
+        "commercial_target": {
+          "metric": "clicks",
+          "target": 50,
+          "direction": "AT_LEAST"
+        }
       }
     }
   ]
