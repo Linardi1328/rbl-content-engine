@@ -44,6 +44,13 @@
           "target": 5,
           "direction": "AT_LEAST"
         }
+      },
+      "experiment_design": {
+        "topic_tags": ["sports-tech", "event-operations"],
+        "archetype": "build-in-public-explainer",
+        "hook_type": "problem-first",
+        "cta_type": "service-lead",
+        "primary_variable": "hook_type"
       }
     },
     {
@@ -85,6 +92,13 @@
           "target": 2,
           "direction": "AT_LEAST"
         }
+      },
+      "experiment_design": {
+        "topic_tags": ["sports-tech", "event-operations"],
+        "archetype": "feature-breakdown",
+        "hook_type": "rule-curiosity",
+        "cta_type": "service-lead",
+        "primary_variable": "hook_type"
       }
     },
     {
@@ -125,6 +139,13 @@
           "target": 50,
           "direction": "AT_LEAST"
         }
+      },
+      "experiment_design": {
+        "topic_tags": ["creator-tools"],
+        "archetype": "buying-guide",
+        "hook_type": "question-led",
+        "cta_type": "affiliate-click",
+        "primary_variable": "archetype"
       }
     }
   ]
