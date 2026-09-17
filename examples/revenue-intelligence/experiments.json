@@ -1,0 +1,39 @@
+{
+  "version": "RBL_EXPERIMENT_BASELINE_V1",
+  "experiments": [
+    {
+      "id": "exp-event-ops-long",
+      "content_id": "yt-event-ops-001",
+      "platform": "youtube",
+      "format": "long_form",
+      "evaluation_after_days": 7,
+      "treatment": {
+        "topic": "grassroots event operations",
+        "hook_type": "problem_first",
+        "archetype": "build_in_public_explainer",
+        "title_variant": "How a grassroots tournament moves beyond spreadsheets",
+        "thumbnail_concept": "spreadsheet versus event operations board",
+        "cta": "service_or_khlim_interest",
+        "monetization_routes": ["SERVICE_LEAD", "KHLIM_LEAD"]
+      },
+      "metrics": ["views", "watch_time_minutes", "leads"]
+    },
+    {
+      "id": "exp-event-ops-short",
+      "content_id": "short-build-001",
+      "platform": "youtube",
+      "format": "shorts",
+      "evaluation_after_days": 7,
+      "treatment": {
+        "topic": "one event os integrity rule",
+        "hook_type": "curiosity_rule",
+        "archetype": "build_in_public_micro_demo",
+        "title_variant": "The rule that stops staff from breaking a bracket",
+        "thumbnail_concept": "bracket node with lock indicator",
+        "cta": "watch_deeper_build",
+        "monetization_routes": ["SHORTS_ADS", "SERVICE_LEAD"]
+      },
+      "metrics": ["views", "watch_time_minutes", "leads"]
+    }
+  ]
+}
