@@ -44,6 +44,12 @@ class ExperimentManifest:
     experiments: tuple[Experiment, ...]
 
 
+def _experiment_payload(experiment: Experiment) -> dict[str, Any]:
+    payload = asdict(experiment)
+    payload["metrics"] = list(experiment.metrics)
+    return payload
+
+
 def _nonempty(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ManifestError(f"{field} must be a non-empty string.")
@@ -355,7 +361,7 @@ def analyze(
         if observed is None:
             results.append(
                 {
-                    "experiment": asdict(experiment),
+                    "experiment": _experiment_payload(experiment),
                     "status": "NO_MATCHING_DATA",
                     "baseline_cohort": None,
                     "metric_comparisons": {},
@@ -430,7 +436,7 @@ def analyze(
             }
         results.append(
             {
-                "experiment": asdict(experiment),
+                "experiment": _experiment_payload(experiment),
                 "status": status,
                 "published_at": observed["published_at"],
                 "observed_at": observed["observed_at"],
