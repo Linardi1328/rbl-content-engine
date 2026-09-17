@@ -58,6 +58,13 @@ AUDIENCE_METRICS = {
 
 COMMERCIAL_METRICS = {"revenue", "clicks", "leads", "sales"}
 DIRECTIONS = {"AT_LEAST", "AT_MOST"}
+EXPERIMENT_PRIMARY_VARIABLES = {
+    "topic_tags",
+    "archetype",
+    "hook_type",
+    "format",
+    "cta_type",
+}
 
 
 class ManifestError(ValueError):
@@ -88,6 +95,15 @@ class Hypothesis:
 
 
 @dataclass(frozen=True)
+class ExperimentDesign:
+    topic_tags: tuple[str, ...]
+    archetype: str
+    hook_type: str
+    cta_type: str
+    primary_variable: str
+
+
+@dataclass(frozen=True)
 class Opportunity:
     id: str
     topic: str
@@ -98,6 +114,7 @@ class Opportunity:
     monetization_routes: tuple[str, ...]
     hypothesis: Hypothesis
     content_id: str | None = None
+    experiment_design: ExperimentDesign | None = None
     input_index: int = 0
 
 
@@ -168,6 +185,32 @@ def _metric_target(raw: Any, field: str, allowed_metrics: set[str]) -> MetricTar
         target=_number(raw.get("target"), f"{field}.target"),
         direction=direction,
         currency=currency,
+    )
+
+
+def _experiment_design(raw: Any, field: str) -> ExperimentDesign | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ManifestError(f"{field} must be an object.")
+    raw_tags = raw.get("topic_tags")
+    if not isinstance(raw_tags, list) or not raw_tags:
+        raise ManifestError(f"{field}.topic_tags must be a non-empty array.")
+    tags = tuple(_nonempty(tag, f"{field}.topic_tags") for tag in raw_tags)
+    if len(set(tag.casefold() for tag in tags)) != len(tags):
+        raise ManifestError(f"{field}.topic_tags must be unique case-insensitively.")
+    primary_variable = _nonempty(raw.get("primary_variable"), f"{field}.primary_variable")
+    if primary_variable not in EXPERIMENT_PRIMARY_VARIABLES:
+        raise ManifestError(
+            f"{field}.primary_variable must be one of: "
+            f"{', '.join(sorted(EXPERIMENT_PRIMARY_VARIABLES))}."
+        )
+    return ExperimentDesign(
+        topic_tags=tags,
+        archetype=_nonempty(raw.get("archetype"), f"{field}.archetype"),
+        hook_type=_nonempty(raw.get("hook_type"), f"{field}.hook_type"),
+        cta_type=_nonempty(raw.get("cta_type"), f"{field}.cta_type"),
+        primary_variable=primary_variable,
     )
 
 
@@ -309,6 +352,9 @@ def load_manifest(path: str | Path, *, workspace: str | Path | None = None) -> R
                 monetization_routes=routes,
                 hypothesis=hypothesis,
                 content_id=content_id,
+                experiment_design=_experiment_design(
+                    raw.get("experiment_design"), f"{opportunity_id}.experiment_design"
+                ),
                 input_index=index,
             )
         )
