@@ -466,6 +466,17 @@ def analyze(
     }
 
 
+def _context_summary(metric_medians: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for metric, result in metric_medians.items():
+        label = f"{metric} ({result['currency']})" if result.get("currency") else metric
+        if result["median"] is None:
+            parts.append(f"{label}: insufficient (n={result['sample_size']})")
+        else:
+            parts.append(f"{label}: median {result['median']} (n={result['sample_size']})")
+    return "; ".join(parts)
+
+
 def markdown_report(payload: dict[str, Any]) -> str:
     lines = [
         "# RBL Phase 2B Experiment & Baseline Report",
@@ -522,6 +533,14 @@ def markdown_report(payload: dict[str, Any]) -> str:
                     f"{result['observed'] if result['observed'] is not None else '—'} | "
                     f"{result['median'] if result['median'] is not None else '—'} | "
                     f"{result['sample_size']} | {result['comparison']} |"
+                )
+        if item["treatment_context"]:
+            lines.extend(["", "### Treatment context", ""])
+            for dimension in ("hook_type", "archetype", "cta"):
+                context = item["treatment_context"][dimension]
+                lines.append(
+                    f"- `{dimension}` = `{context['value']}`: matched n={context['sample_size']}; "
+                    f"{_context_summary(context['metric_medians'])}"
                 )
         lines.extend(
             [
