@@ -45,13 +45,18 @@ A local JSON manifest records one or more manually selected content experiments.
   - thumbnail concept;
   - CTA;
   - monetization routes;
-- one or more supported numeric metrics to compare.
+- one or more supported numeric metrics to compare;
+- `revenue_currency` when `revenue` is one of those metrics.
 
 Treatment metadata is descriptive. It does not prove why performance changed.
+
+Monetization routes use the same integrity rules as Phase 2A: values must be known and unique, and `NONE` cannot be combined with another route.
 
 ### Current analytics
 
 Reuse the Phase 2A manually exported analytics snapshot contract. Phase 2B requires current content analytics to be at or beyond the experiment's evaluation window before interpreting observed values.
+
+If the experiment compares `revenue`, current analytics must include a currency matching the experiment's declared `revenue_currency`. Missing or different currency fails closed.
 
 ### Historical baseline CSV
 
@@ -70,6 +75,8 @@ The historical dataset is local, manually exported/assembled first-party data. E
 
 Every historical row must already be mature for its declared observation window. Duplicate content IDs fail closed.
 
+If a row contains a revenue value, that row must also contain currency. Revenue baselines only use historical rows whose currency matches the experiment's declared revenue currency; currencies are never silently mixed.
+
 ## Baseline policy
 
 Phase 2B uses one simple deterministic policy:
@@ -78,7 +85,8 @@ Phase 2B uses one simple deterministic policy:
 - exclude the current experiment's own content ID;
 - baseline statistic: median;
 - minimum usable sample: 3 observations per metric;
-- if fewer than 3 metric observations exist, return `INSUFFICIENT_BASELINE` rather than extrapolating.
+- revenue baseline observations must additionally match `revenue_currency`;
+- if fewer than 3 usable metric observations exist, return `INSUFFICIENT_BASELINE` rather than extrapolating.
 
 Do not tune this policy from the small synthetic fixture. A future policy change requires a version change and human review.
 
@@ -86,19 +94,22 @@ Do not tune this policy from the small synthetic fixture. A future policy change
 
 For each requested metric:
 
+- experiment observation window not mature -> `WINDOW_PENDING`;
 - current observation missing -> `NO_OBSERVATION`;
 - baseline sample < 3 -> `INSUFFICIENT_BASELINE`;
 - observed > median -> `ABOVE_BASELINE`;
 - observed < median -> `BELOW_BASELINE`;
 - observed == median -> `AT_BASELINE`.
 
-Also retain numeric delta and observed/baseline ratio when the baseline is non-zero.
+Also retain numeric delta and observed/baseline ratio when the baseline is non-zero. Revenue comparisons retain the currency used by the baseline.
 
 These labels are descriptive, not rankings of creative quality and not causal conclusions.
 
 ## Treatment context
 
 For `hook_type`, `archetype`, and `cta`, show how many matched historical cohort rows share the same treatment value and expose metric medians only where the same minimum-sample rule is satisfied.
+
+Revenue treatment-context medians use the same currency filter as the overall revenue baseline.
 
 This context is intended to support the next human hypothesis. It must not produce wording such as "this hook caused more views" or "this CTA is the winner."
 
@@ -119,7 +130,10 @@ Both artifacts must retain:
 - per-metric baseline median/sample/comparison;
 - fixed-window timestamps/status;
 - treatment-context sample sizes;
+- revenue currency when relevant;
 - explicit non-causal disclaimer.
+
+For identical inputs, generated JSON and Markdown must be byte-for-byte deterministic.
 
 ## CLI
 
@@ -139,11 +153,15 @@ Fail closed on:
 
 - duplicate experiment IDs or content IDs;
 - unsupported metrics or monetization routes;
-- duplicate historical content IDs;
+- duplicate monetization routes or `NONE` combined with another route;
+- duplicate historical content IDs or duplicate history headers;
 - malformed or timezone-naive timestamps;
 - historical observations earlier than publication;
 - historical rows that have not matured to their declared evaluation window;
-- current analytics platform mismatching the experiment platform.
+- current analytics platform mismatching the experiment platform;
+- revenue experiments without a declared currency;
+- current revenue analytics without the same currency;
+- historical revenue values without currency.
 
 Do not use historical performance as factual project evidence.
 
@@ -157,10 +175,12 @@ Phase 2B is implementation-complete when the synthetic/public-safe fixture can:
 4. enforce a minimum baseline sample;
 5. compare multiple audience/commercial metrics;
 6. retain hook/archetype/CTA context without causal language;
-7. fail closed on invalid history/experiment integrity;
-8. generate deterministic JSON/Markdown outputs;
-9. remain fully offline and dependency-free;
-10. preserve all Phase 2A, ProofLab, Topview, and human-approval boundaries.
+7. preserve currency integrity for revenue comparisons;
+8. distinguish pending observation windows from missing metrics;
+9. fail closed on invalid history/experiment integrity;
+10. generate byte-for-byte deterministic JSON/Markdown outputs through the real CLI;
+11. remain fully offline and dependency-free;
+12. preserve all Phase 2A, ProofLab, Topview, and human-approval boundaries.
 
 ## Phase 2 stop condition
 
