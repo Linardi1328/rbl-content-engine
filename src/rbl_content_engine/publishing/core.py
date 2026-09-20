@@ -422,7 +422,7 @@ class FacebookReelsPublisher:
     ) -> dict[str, Any]:
         path = _asset_path(manifest, "facebook")
         endpoint = (
-            f"https://graph.instagram.com/{self.graph_version}/me/video_reels"
+            f"https://graph.facebook.com/{self.graph_version}/me/video_reels"
         )
         start = _form_request(
             self.transport,
