@@ -311,6 +311,43 @@ PYTHONPATH=src python -m rbl_content_engine.production \\
 
 Live provider/account state belongs under ignored `.production/` files. Safe dated findings from the 2026-09-20 implementation session are recorded in `docs/production/LIVE_FINDINGS_2026-09-20.md`.
 
+## Phase 4A — official Higgsfield API launch video
+
+Phase 4A adds Higgsfield's official pay-as-you-go API as a real RBL execution backend for the first complete launch-video prototype.
+
+```text
+tracked 9:16 launch plan
+-> current live Higgsfield API application path
+-> USD cost preflight
+-> official higgsfield-client SDK
+-> controlled shot generation
+-> QC
+-> assemble final cut
+-> PENDING_HUMAN_REVIEW
+-> explicit human approval
+-> manual/external publication
+```
+
+The official API is intentionally optional:
+
+```bash
+python -m pip install -e '.[higgsfield-api]'
+```
+
+Credentials must remain local in `HF_KEY` or `HF_API_KEY` + `HF_API_SECRET`.
+
+Tracked launch plan:
+
+`examples/production/rbl-launch-video-plan.json`
+
+The plan targets approximately 20 seconds across five 4-second vertical shots with a US$20 project cap. Tracked application fields are deliberately unresolved until the current live Higgsfield API catalog is inspected.
+
+The API prepaid USD balance is separate from Higgsfield creator/plugin credits. Account funding/key creation is an external prerequisite when the active tool surface cannot perform Higgsfield Cloud payment/account mutations.
+
+**Publication remains blocked after generation.** The final cut must enter `PENDING_HUMAN_REVIEW`. Only explicit human confirmation can produce `APPROVED_FOR_PUBLICATION`; Phase 4A contains no automatic social-posting method.
+
+Authority: `docs/production/PHASE_4A_HIGGSFIELD_API_LAUNCH.md`.
+
 ## Later learning loop
 
 Phase 0 uses manually refreshed market snapshots only. A later phase may compare content archetypes against explicitly authorized first-party account performance so recommendations become specific to the creator's actual audience instead of relying only on generic platform assumptions.
