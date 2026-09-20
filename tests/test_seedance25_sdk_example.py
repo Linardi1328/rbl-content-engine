@@ -40,7 +40,7 @@ class Seedance25SdkExampleTests(unittest.TestCase):
         )
         self.assertNotIn("abcdefghijkl", message)
         self.assertNotIn("mnopqrstuvwxyz", message)
-        self.assertIn("[REDACTED]", message)
+        self.assertIn("[REDACTED_CREDENTIAL]", message)
 
     def test_example_extracts_video_url_without_credentials(self) -> None:
         module = load_example_module()
