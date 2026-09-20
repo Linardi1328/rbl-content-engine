@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "generate_rbl_launch_video.py"
 ASSEMBLER = ROOT / "scripts" / "assemble_rbl_launch_video.py"
+INSPECTOR = ROOT / "scripts" / "inspect_higgsfield_request.py"
 PLAN = ROOT / "examples" / "production" / "rbl-launch-video-plan.json"
 
 
@@ -68,6 +69,19 @@ class Phase4CLaunchVideoTests(unittest.TestCase):
         self.assertIn("no automatic retry will occur", source)
         self.assertNotIn("for attempt in", source)
         self.assertNotIn("while attempt", source)
+
+
+    def test_failed_shot_requires_explicit_targeted_retry(self) -> None:
+        source = GENERATOR.read_text(encoding="utf-8")
+        self.assertIn("--retry-shot", source)
+        self.assertIn("A new paid attempt requires --retry-shot", source)
+
+    def test_request_inspector_never_submits_generation(self) -> None:
+        source = INSPECTOR.read_text(encoding="utf-8")
+        self.assertIn("client.status(args.request_id)", source)
+        self.assertIn("client.result(args.request_id)", source)
+        self.assertNotIn(".submit(", source)
+        self.assertNotIn(".subscribe(", source)
 
     def test_assembler_builds_vertical_silent_review_cut(self) -> None:
         module = load_module("launch_assembler", ASSEMBLER)
