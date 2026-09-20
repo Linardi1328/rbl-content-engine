@@ -9,14 +9,18 @@ When instructions conflict, follow this order:
 1. `AGENTS.md`
 2. for Revenue & Audience Intelligence work, `docs/revenue-intelligence/PHASE_2A_SPEC.md`
 3. for provider-neutral production planning, `docs/production/PHASE_3A_SPEC.md`
-4. `docs/phase-0-spec.md`
-5. `docs/platform-intelligence.md`
-6. for Topview production tasks, `docs/topview/WORKFLOW.md`
-7. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
-8. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
-9. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
-10. the active task/prompt
-11. existing implementation conventions
+4. for controlled keyframe production, `docs/production/PHASE_3B_SPEC.md`
+5. for complete video prototypes, `docs/production/PHASE_3C_SPEC.md`
+6. for repeatability/publication observations, `docs/production/PHASE_3D_SPEC.md`
+7. for provider stabilization, `docs/production/PHASE_3E_SPEC.md`
+8. `docs/phase-0-spec.md`
+9. `docs/platform-intelligence.md`
+10. for Topview production tasks, `docs/topview/WORKFLOW.md`
+11. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
+12. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
+13. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
+14. the active task/prompt
+15. existing implementation conventions
 
 The human owner has explicitly authorized Phase 2A Revenue & Audience Intelligence as a new offline milestone. Phase 0 remains authoritative for the Phase 0 runner; Phase 2A must not silently mutate or weaken Phase 0 behavior.
 
@@ -135,6 +139,18 @@ Free/trial generations are tactical prototype capacity only. Do not architect RB
 Never use shared, leaked, copied, repository-embedded, or third-party API credentials. Provider credentials and entitlements must belong to the human owner or an authorized workspace and remain outside tracked files.
 
 Phase 3A code is read-only/planning-only: provider capabilities, cost quotes, prototype records, readiness evaluation, and human authorization guards. It intentionally exposes no generation submission method.
+
+## Stage 3B–3E — Controlled Production Prototype
+
+The human owner authorized implementation of the full Stage 3 engineering stack after Phase 3A. Follow the Phase 3B/3C/3D/3E production specs in order.
+
+Stage 3 implementation may perform explicitly scoped live provider discovery and synthetic/public-safe prototype generation within the existing budget guardrails. It must still fail closed on provider/account-tier restrictions and must not claim an external generation succeeded unless a live job/output was actually observed.
+
+Model discovery, cost estimation, and execution eligibility are separate facts. A catalog entry or successful cost quote does not prove that the active account can execute that model. Production preflight must positively establish model-level execution eligibility.
+
+Automatic social publication remains prohibited. Phase 3D accepts only human-confirmed `MANUAL_EXTERNAL` publication receipts and matching first-party observation records. Never fabricate published content IDs, publication timestamps, or social metrics from a generated file.
+
+Stage 3E may establish provider-stabilization readiness but must leave `provider_selection = HUMAN_DECISION_REQUIRED`. Reaching the stability gate does not automatically buy a Higgsfield plan, activate a trial, migrate providers, or create a paid API account.
 
 ## Topview production operator contract
 
