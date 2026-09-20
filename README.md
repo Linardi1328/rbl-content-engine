@@ -4,7 +4,7 @@ Evidence-driven manual content pipeline for RBL Productions.
 
 ## Repository scope and current milestone
 
-Phase 0 remains the evidence-to-content foundation. Phase 2A/2B add the accepted offline revenue/audience learning loop. The active development milestone is **Phase 3A — Provider-Neutral Production Contract**, which prepares a controlled production prototype without submitting generation jobs or committing to a recurring provider plan.
+Phase 0 remains the evidence-to-content foundation. Phase 2A/2B add the accepted offline revenue/audience learning loop. The active production milestone is **Phase 4C — First Launch Video Generation**, using the live-verified official Higgsfield Seedance 2.5 API while preserving the existing budget, QC, and human-review gates.
 
 Phase 0 turns verified project/GitHub evidence into platform-native content drafts while keeping factual evidence and market strategy separate:
 
@@ -356,13 +356,39 @@ Tracked launch plan:
 
 `examples/production/rbl-launch-video-plan.json`
 
-The plan targets approximately 20 seconds across five 4-second vertical shots with a US$20 project cap. Tracked application fields are deliberately unresolved until the current live Higgsfield API catalog is inspected.
+The plan targets approximately 20 seconds across five 4-second vertical shots with a US$20 project cap and is now bound to the live-verified `bytedance/seedance-2.5/text-to-video` application.
 
 The API prepaid USD balance is separate from Higgsfield creator/plugin credits. Account funding/key creation is an external prerequisite when the active tool surface cannot perform Higgsfield Cloud payment/account mutations.
 
 **Publication remains blocked after generation.** The final cut must enter `PENDING_HUMAN_REVIEW`. Only explicit human confirmation can produce `APPROVED_FOR_PUBLICATION`; Phase 4A contains no automatic social-posting method.
 
 Authority: `docs/production/PHASE_4A_HIGGSFIELD_API_LAUNCH.md`.
+
+## Phase 4C — generate the first launch review cut
+
+The official Seedance 2.5 smoke test has completed successfully in the owner environment after funding the separate Higgsfield API balance.
+
+Generate the five tracked 9:16 shots:
+
+```bash
+uv run python scripts/generate_rbl_launch_video.py
+```
+
+The generator is resumable and does not automatically retry billable requests. Successful clips are downloaded into ignored `.production/launch-video-outputs/`.
+
+After all five shots are complete, assemble the local review cut:
+
+```bash
+uv run python scripts/assemble_rbl_launch_video.py
+```
+
+This requires local `ffmpeg` and `ffprobe`. The expected review file is:
+
+`.production/launch-video-outputs/rbl-launch-review.mp4`
+
+Successful assembly sets live state to `PENDING_HUMAN_REVIEW`; it does not authorize or perform social publication.
+
+Authority: `docs/production/PHASE_4C_LAUNCH_VIDEO.md`.
 
 ## Later learning loop
 
