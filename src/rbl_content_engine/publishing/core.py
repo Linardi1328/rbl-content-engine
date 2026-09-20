@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_QUEUE = ROOT / ".production" / "social-publishing-queue.json"
 DEFAULT_RECEIPTS = ROOT / ".production" / "publication-receipts"
 DEFAULT_AUTH_DIR = ROOT / ".production" / "social-auth"
-SUPPORTED_PLATFORMS = ("instagram", "facebook", "tiktok", "youtube")
+SUPPORTED_PLATFORMS = ("instagram", "tiktok", "youtube")
 
 
 class PublishError(RuntimeError):
@@ -304,14 +304,14 @@ class InstagramReelsPublisher:
     @classmethod
     def from_env(cls, **kwargs: Any) -> "InstagramReelsPublisher":
         env = _require_env(
-            "META_GRAPH_VERSION",
+            "INSTAGRAM_GRAPH_VERSION",
             "INSTAGRAM_USER_ID",
-            "META_PAGE_ACCESS_TOKEN",
+            "INSTAGRAM_ACCESS_TOKEN",
         )
         return cls(
-            graph_version=env["META_GRAPH_VERSION"],
+            graph_version=env["INSTAGRAM_GRAPH_VERSION"],
             ig_user_id=env["INSTAGRAM_USER_ID"],
-            access_token=env["META_PAGE_ACCESS_TOKEN"],
+            access_token=env["INSTAGRAM_ACCESS_TOKEN"],
             **kwargs,
         )
 
@@ -322,7 +322,7 @@ class InstagramReelsPublisher:
         video_url = str(asset["public_url"])
         caption = str(config.get("caption", ""))
         create_url = (
-            f"https://graph.facebook.com/{self.graph_version}/"
+            f"https://graph.instagram.com/{self.graph_version}/"
             f"{self.ig_user_id}/media"
         )
         create = _form_request(
@@ -343,7 +343,7 @@ class InstagramReelsPublisher:
             raise PublishError("Instagram did not return a container id")
 
         status_url = (
-            f"https://graph.facebook.com/{self.graph_version}/{container_id}?"
+            f"https://graph.instagram.com/{self.graph_version}/{container_id}?"
             + urllib.parse.urlencode(
                 {
                     "fields": "status_code,status",
@@ -371,7 +371,7 @@ class InstagramReelsPublisher:
             )
 
         publish_url = (
-            f"https://graph.facebook.com/{self.graph_version}/"
+            f"https://graph.instagram.com/{self.graph_version}/"
             f"{self.ig_user_id}/media_publish"
         )
         result = _form_request(
@@ -422,7 +422,7 @@ class FacebookReelsPublisher:
     ) -> dict[str, Any]:
         path = _asset_path(manifest, "facebook")
         endpoint = (
-            f"https://graph.facebook.com/{self.graph_version}/me/video_reels"
+            f"https://graph.instagram.com/{self.graph_version}/me/video_reels"
         )
         start = _form_request(
             self.transport,
@@ -977,8 +977,6 @@ class ScheduleQueue:
 def _publisher_for(platform: str) -> Any:
     if platform == "instagram":
         return InstagramReelsPublisher.from_env()
-    if platform == "facebook":
-        return FacebookReelsPublisher.from_env()
     if platform == "tiktok":
         return TikTokPublisher.from_env()
     if platform == "youtube":
