@@ -809,7 +809,7 @@ class YouTubePublisher:
         if not isinstance(video_id, str) or not video_id:
             raise PublishError("YouTube upload returned no video id")
         return {
-            "status": "SCHEDULED" if "publishAt" in status else "PUBLISHED",
+            "status": "NATIVE_SCHEDULED" if "publishAt" in status else "PUBLISHED",
             "provider_id": video_id,
             "publish_at": status.get("publishAt"),
         }
@@ -938,7 +938,7 @@ def _write_receipt(
 
 def _finish_job_status(job: ScheduledPost) -> None:
     statuses = [value.get("status") for value in job.platforms.values()]
-    if statuses and all(status in {"PUBLISHED", "SCHEDULED"} for status in statuses):
+    if statuses and all(status in {"PUBLISHED", "NATIVE_SCHEDULED"} for status in statuses):
         job.status = "COMPLETE"
     elif any(status in {"FAILED", "BLOCKED", "RECONCILE_REQUIRED"} for status in statuses):
         job.status = "PARTIAL"
@@ -968,7 +968,7 @@ def publish_due_jobs(
         for platform, platform_state in job.platforms.items():
             state = platform_state.get("status")
 
-            if state in {"PUBLISHED", "SCHEDULED", "FAILED", "BLOCKED", "RECONCILE_REQUIRED"}:
+            if state in {"PUBLISHED", "NATIVE_SCHEDULED", "FAILED", "BLOCKED", "RECONCILE_REQUIRED"}:
                 continue
 
             if state == "IN_PROGRESS":
