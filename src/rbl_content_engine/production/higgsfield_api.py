@@ -34,6 +34,8 @@ class HiggsfieldApiGenerationRequest:
     def __post_init__(self) -> None:
         if not self.application.strip():
             raise ValueError("application must not be empty")
+        if self.application == "LIVE_CATALOG_REQUIRED" or "$" in self.application:
+            raise ValueError("application must be resolved from the live Higgsfield API catalog")
         if self.quote_usd < 0:
             raise ValueError("quote_usd must be non-negative")
         if not self.purpose.strip():
