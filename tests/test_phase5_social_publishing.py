@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
+from unittest.mock import patch
 
 from rbl_content_engine.publishing.core import (
     FacebookReelsPublisher,
@@ -296,6 +298,39 @@ class FacebookPublisherTests(unittest.TestCase):
 
 
 class TikTokPublisherTests(unittest.TestCase):
+    def test_from_env_refreshes_short_lived_access_token_and_persists_rotated_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory) / "tiktok-token.json"
+            transport = FakeTransport(
+                [
+                    response(
+                        {
+                            "access_token": "new-access",
+                            "refresh_token": "new-refresh",
+                            "expires_in": 86400,
+                            "refresh_expires_in": 31536000,
+                            "scope": "video.publish",
+                            "open_id": "creator-1",
+                            "token_type": "Bearer",
+                        }
+                    )
+                ]
+            )
+            env = {
+                "TIKTOK_CLIENT_KEY": "client-key",
+                "TIKTOK_CLIENT_SECRET": "client-secret",
+                "TIKTOK_REFRESH_TOKEN": "old-refresh",
+                "TIKTOK_TOKEN_STATE_PATH": str(state),
+            }
+            with patch.dict(os.environ, env, clear=False):
+                publisher = TikTokPublisher.from_env(transport=transport)
+            self.assertEqual(publisher.access_token, "new-access")
+            stored = json.loads(state.read_text(encoding="utf-8"))
+            self.assertEqual(stored["refresh_token"], "new-refresh")
+            self.assertNotIn("new-access", state.read_text(encoding="utf-8"))
+            body = transport.calls[0]["body"].decode("utf-8")
+            self.assertIn("grant_type=refresh_token", body)
+
     def test_small_file_uses_one_chunk(self) -> None:
         size = 4 * 1024 * 1024
         self.assertEqual(_tiktok_chunk_plan(size), (size, 1))
