@@ -12,7 +12,8 @@
       "cost_amount": "0",
       "cost_unit": "FREE_GENERATION",
       "qc_status": "PASS",
-      "human_approved": true
+      "human_approved": true,
+      "locked": true
     }
   ],
   "videos": [
