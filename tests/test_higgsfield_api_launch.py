@@ -1,4 +1,6 @@
+import json
 import unittest
+from pathlib import Path
 from decimal import Decimal
 
 from rbl_content_engine.production.contracts import QCStatus
@@ -79,6 +81,37 @@ class HiggsfieldApiLaunchTests(unittest.TestCase):
         self.assertEqual(quote.provider_id, HIGGSFIELD_API_PROVIDER_ID)
         self.assertEqual(quote.unit, CostUnit.USD)
         self.assertEqual(quote.amount, Decimal("1.25"))
+
+
+    def test_unresolved_catalog_application_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "resolved from the live Higgsfield API catalog"):
+            HiggsfieldApiGenerationRequest(
+                application="LIVE_CATALOG_REQUIRED",
+                arguments={"prompt": "test"},
+                quote_usd=Decimal("1"),
+                purpose="launch shot",
+            )
+
+    def test_checked_in_launch_plan_is_review_gated_and_within_budget(self) -> None:
+        payload = json.loads(
+            Path("examples/production/rbl-launch-video-plan.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            payload["publication_policy"],
+            "PENDING_HUMAN_REVIEW_BEFORE_ANY_PUBLICATION",
+        )
+        self.assertEqual(payload["aspect_ratio"], "9:16")
+        self.assertEqual(len(payload["shots"]), 5)
+        self.assertEqual(
+            sum(Decimal(shot["estimated_cost_usd"]) for shot in payload["shots"]),
+            Decimal("15.00"),
+        )
+        self.assertLessEqual(Decimal("15.00"), Decimal(payload["project_budget_usd"]))
+        self.assertTrue(
+            all(shot["application"] == "LIVE_CATALOG_REQUIRED" for shot in payload["shots"])
+        )
 
     def test_adapter_submits_exactly_once_and_preserves_request_id(self) -> None:
         client = FakeClient()
