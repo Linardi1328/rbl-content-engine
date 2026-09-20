@@ -41,7 +41,7 @@
       "duration_seconds": 4,
       "application": "bytedance/seedance-2.5/text-to-video",
       "estimated_cost_usd": "3.00",
-      "prompt": "Vertical 9:16 motion-design shot. One verified content card splits into three distinct short-form treatments represented by generic vertical social-video frames: fast hook, visual storyboard, platform-native pacing. Do not imitate any platform logo or interface exactly. Clean modern studio aesthetic, controlled camera movement."
+      "prompt": "Vertical 9:16 abstract cinematic motion-design scene. A single clean neutral content card smoothly transforms into three distinct geometric visual compositions representing alternate creative treatments. Minimal rectangles, panels, lines, and motion cues only. No people, no bodies, no faces, no logos, no social-media interfaces, no readable text, no brands, no medical or adult themes. Dark neutral studio aesthetic, polished professional lighting, restrained motion, controlled camera movement, clear object continuity."
     },
     {
       "shot_id": "S04",
