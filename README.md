@@ -285,6 +285,32 @@ Implementation authority: `docs/production/PHASE_3A_SPEC.md` and `src/rbl_conten
 
 Phase 3A contains no live provider adapter or generation submission path. A later explicitly authorized milestone may add controlled provider discovery and a single keyframe pilot.
 
+## Stage 3B–3E — controlled production prototype
+
+Stage 3 continues the provider-neutral architecture into a real production lifecycle:
+
+```text
+3B  provider discovery + controlled keyframe
+-> 3C approved-keyframe video prototype
+-> 3D repeatability + manual publication observations
+-> 3E provider stabilization readiness
+```
+
+The production package now distinguishes provider/model discovery, cost estimation, and live execution eligibility. A model may appear in the catalog and expose a valid quote while still being blocked for the active account tier; such a model must fail closed in production preflight.
+
+Stage 3D never publishes content. It accepts only human-confirmed `MANUAL_EXTERNAL` publication receipts plus matching first-party social observations. The five-video / three-observation threshold is a process-readiness gate, not a claim of creative or commercial success.
+
+Stage 3E emits provider evidence and keeps provider selection as `HUMAN_DECISION_REQUIRED`. It does not subscribe to Higgsfield, activate a trial, create an API account, or migrate providers automatically.
+
+Deterministic offline evaluation:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.production \\
+  examples/production/stage3-complete.json
+```
+
+Live provider/account state belongs under ignored `.production/` files. Safe dated findings from the 2026-09-20 implementation session are recorded in `docs/production/LIVE_FINDINGS_2026-09-20.md`.
+
 ## Later learning loop
 
 Phase 0 uses manually refreshed market snapshots only. A later phase may compare content archetypes against explicitly authorized first-party account performance so recommendations become specific to the creator's actual audience instead of relying only on generic platform assumptions.
