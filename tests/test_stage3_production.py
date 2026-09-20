@@ -47,7 +47,9 @@ def snapshot() -> ProviderSnapshot:
         channel="plugin",
         observed_at="2026-09-20T17:00:00+08:00",
         capabilities=CAPS,
-        model_ids=("nano_banana", "kling3_0_turbo"),
+        model_ids=("nano_banana", "kling3_0_turbo", "z_image"),
+        executable_model_ids=("z_image",),
+        blocked_model_ids=("nano_banana", "kling3_0_turbo"),
     )
 
 
@@ -159,6 +161,7 @@ class Stage3ProductionTests(unittest.TestCase):
             snapshot(),
             quote,
             auth,
+            model_id="z_image",
         )
         self.assertTrue(result.ready)
         self.assertEqual(result.blockers, ())
@@ -184,9 +187,37 @@ class Stage3ProductionTests(unittest.TestCase):
             snapshot(),
             quote,
             auth,
+            model_id="z_image",
         )
         self.assertFalse(result.ready)
         self.assertIn("REFERENCE_NOT_LOCKED:REF_MEDIA", result.blockers)
+
+
+    def test_keyframe_preflight_blocks_catalog_model_that_cannot_execute(self) -> None:
+        quote = CostQuote(
+            provider_id="higgsfield",
+            amount=Decimal("1"),
+            unit=CostUnit.CREDITS,
+            source="live estimate",
+        )
+        auth = GenerationAuthorization(
+            authorization_id="AUTH-KF-2",
+            provider_id="higgsfield",
+            scope=GenerationScope.KEYFRAME,
+            human_authorized=True,
+            authorized_at="2026-09-20T17:01:00+08:00",
+            max_credits=Decimal("2"),
+        )
+        result = evaluate_keyframe_preflight(
+            scene(),
+            (LockedReference("REF_MEDIA", True, True),),
+            snapshot(),
+            quote,
+            auth,
+            model_id="nano_banana",
+        )
+        self.assertFalse(result.ready)
+        self.assertIn("MODEL_NOT_EXECUTABLE", result.blockers)
 
     def test_video_preflight_requires_approved_keyframe(self) -> None:
         quote = CostQuote(
@@ -209,9 +240,11 @@ class Stage3ProductionTests(unittest.TestCase):
             snapshot(),
             quote,
             auth,
+            model_id="kling3_0_turbo",
         )
         self.assertFalse(result.ready)
         self.assertIn("START_KEYFRAME_NOT_APPROVED", result.blockers)
+        self.assertIn("MODEL_NOT_EXECUTABLE", result.blockers)
 
     def test_video_preflight_rejects_long_clip_without_justification(self) -> None:
         long_scene = SceneCard(
@@ -235,7 +268,14 @@ class Stage3ProductionTests(unittest.TestCase):
             "2026-09-20T17:02:00+08:00",
             max_credits=Decimal("10"),
         )
-        result = evaluate_video_preflight(long_scene, keyframe(), snapshot(), quote, auth)
+        result = evaluate_video_preflight(
+            long_scene,
+            keyframe(),
+            snapshot(),
+            quote,
+            auth,
+            model_id="kling3_0_turbo",
+        )
         self.assertIn("LONG_CLIP_JUSTIFICATION_REQUIRED", result.blockers)
 
     def test_publication_receipt_cannot_be_unconfirmed(self) -> None:
