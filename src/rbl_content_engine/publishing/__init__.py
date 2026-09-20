@@ -1,7 +1,6 @@
 """Direct social publishing and scheduling for Phase 5 RBL productions."""
 
 from .core import (
-    FacebookReelsPublisher,
     InstagramReelsPublisher,
     PublishError,
     ScheduleQueue,
@@ -13,7 +12,6 @@ from .core import (
 )
 
 __all__ = [
-    "FacebookReelsPublisher",
     "InstagramReelsPublisher",
     "PublishError",
     "ScheduleQueue",
