@@ -328,10 +328,10 @@ tracked 9:16 launch plan
 -> manual/external publication
 ```
 
-The official API is intentionally optional:
+The official API SDK is intentionally installed only in the live production environment:
 
 ```bash
-python -m pip install -e '.[higgsfield-api]'
+python -m pip install 'higgsfield-client>=0.1.0,<0.2.0'
 ```
 
 Credentials must remain local in `HF_KEY` or `HF_API_KEY` + `HF_API_SECRET`.
