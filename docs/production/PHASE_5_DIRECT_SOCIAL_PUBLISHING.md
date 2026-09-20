@@ -29,7 +29,7 @@ TikTok is the exception where an initialized post can be safely followed by stat
 
 ## Runtime files
 
-All live scheduling/auth/publication state is local and gitignored:
+All live scheduling/auth/publication state is local and gitignored. The publishing CLI automatically loads repository-root `.env.local` without overriding already-exported environment variables:
 
 ```text
 .production/social-publishing-queue.json
