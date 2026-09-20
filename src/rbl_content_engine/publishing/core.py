@@ -26,8 +26,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
+from dotenv import load_dotenv
+
 
 ROOT = Path(__file__).resolve().parents[3]
+load_dotenv(ROOT / ".env.local", override=False)
+
 DEFAULT_QUEUE = ROOT / ".production" / "social-publishing-queue.json"
 DEFAULT_RECEIPTS = ROOT / ".production" / "publication-receipts"
 DEFAULT_AUTH_DIR = ROOT / ".production" / "social-auth"
