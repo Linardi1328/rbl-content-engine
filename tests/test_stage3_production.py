@@ -19,6 +19,7 @@ from rbl_content_engine.production.providers import (
     CostUnit,
     ProviderCapability,
 )
+from rbl_content_engine.production.io import load_stage3_evaluation, render_stage3_report
 from rbl_content_engine.production.stage3 import (
     Stage3Phase,
     build_repeatability_records,
@@ -358,6 +359,17 @@ class Stage3ProductionTests(unittest.TestCase):
         )
         self.assertEqual(result.phase, Stage3Phase.PHASE_3D_REPEATABILITY)
         self.assertIn("HUMAN_CONFIRMATION_REQUIRED", result.blockers)
+
+
+    def test_checked_in_stage3_fixture_reaches_stabilization_deterministically(self) -> None:
+        first = load_stage3_evaluation("examples/production/stage3-complete.json")
+        second = load_stage3_evaluation("examples/production/stage3-complete.json")
+        self.assertEqual(first.phase, Stage3Phase.PHASE_3E_STABILIZATION)
+        self.assertEqual(render_stage3_report(first), render_stage3_report(second))
+        self.assertIn(
+            '"provider_selection": "HUMAN_DECISION_REQUIRED"',
+            render_stage3_report(first),
+        )
 
 
 if __name__ == "__main__":
