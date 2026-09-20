@@ -56,6 +56,8 @@ def evaluate_keyframe_preflight(
     snapshot: ProviderSnapshot,
     quote: CostQuote,
     authorization: GenerationAuthorization,
+    *,
+    model_id: str,
 ) -> PreflightResult:
     blockers: list[str] = []
     if quote.provider_id != snapshot.provider_id:
@@ -64,6 +66,10 @@ def evaluate_keyframe_preflight(
     required = frozenset({ProviderCapability.KEYFRAME_IMAGE})
     if not _provider_supports(snapshot, required):
         blockers.append("KEYFRAME_CAPABILITY_UNAVAILABLE")
+    if model_id not in snapshot.model_ids:
+        blockers.append("MODEL_NOT_DISCOVERED")
+    elif not snapshot.model_is_executable(model_id):
+        blockers.append("MODEL_NOT_EXECUTABLE")
 
     refs = {reference.reference_id: reference for reference in references}
     for reference_id in scene.reference_ids:
@@ -95,6 +101,8 @@ def evaluate_video_preflight(
     snapshot: ProviderSnapshot,
     quote: CostQuote,
     authorization: GenerationAuthorization,
+    *,
+    model_id: str,
 ) -> PreflightResult:
     blockers: list[str] = []
     if quote.provider_id != snapshot.provider_id:
@@ -107,6 +115,10 @@ def evaluate_video_preflight(
     required = frozenset({ProviderCapability.IMAGE_TO_VIDEO, ProviderCapability.START_FRAME})
     if not _provider_supports(snapshot, required):
         blockers.append("IMAGE_TO_VIDEO_CAPABILITY_UNAVAILABLE")
+    if model_id not in snapshot.model_ids:
+        blockers.append("MODEL_NOT_DISCOVERED")
+    elif not snapshot.model_is_executable(model_id):
+        blockers.append("MODEL_NOT_EXECUTABLE")
 
     if scene.duration_seconds > Decimal("8") and not scene.long_clip_justification:
         blockers.append("LONG_CLIP_JUSTIFICATION_REQUIRED")
