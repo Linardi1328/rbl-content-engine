@@ -29,6 +29,19 @@ class Seedance25SdkExampleTests(unittest.TestCase):
         self.assertIn('"aspect_ratio": "16:9"', text)
         self.assertIn("higgsfield_client.subscribe(", text)
 
+
+    def test_safe_provider_error_redacts_key_like_material(self) -> None:
+        module = load_example_module()
+        message = module._safe_provider_error(
+            RuntimeError(
+                "Authorization: Key abcdefghijkl:mnopqrstuvwxyz "
+                "HF_KEY=abcdefgh:ijklmnop"
+            )
+        )
+        self.assertNotIn("abcdefghijkl", message)
+        self.assertNotIn("mnopqrstuvwxyz", message)
+        self.assertIn("[REDACTED]", message)
+
     def test_example_extracts_video_url_without_credentials(self) -> None:
         module = load_example_module()
         self.assertEqual(
