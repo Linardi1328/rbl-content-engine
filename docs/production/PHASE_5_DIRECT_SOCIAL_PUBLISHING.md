@@ -1,0 +1,227 @@
+# Phase 5 — Direct Social Publishing
+
+## Purpose
+
+Phase 5 adds an RBL-owned scheduler and direct official platform adapters so a validated final video can be posted at a timezone-aware scheduled datetime without paying for a third-party scheduler.
+
+Supported targets:
+
+- Instagram Reels
+- Facebook Reels
+- TikTok Direct Post
+- YouTube video upload / Shorts-compatible vertical videos
+
+Earlier Phase 0–4 publication gates remain unchanged. Phase 5 is a new, explicit owner-authorized publication milestone.
+
+## Architecture
+
+```text
+final RBL master
+-> platform-specific exports
+-> Phase 5 post manifest
+-> local schedule queue
+-> due-time platform publisher
+-> per-platform receipt/state
+```
+
+The scheduler is intentionally conservative around uncertain writes. It marks a platform `IN_PROGRESS` before the first mutation. If the process restarts while a write is uncertain, it moves that platform to `RECONCILE_REQUIRED` rather than blindly re-posting.
+
+TikTok is the exception where an initialized post can be safely followed by status reconciliation using its `publish_id`.
+
+## Runtime files
+
+All live scheduling/auth/publication state is local and gitignored:
+
+```text
+.production/social-publishing-queue.json
+.production/publication-receipts/
+.production/social-auth/
+.production/final-exports/
+```
+
+No access token, refresh token, client secret, provider ID, or private media URL belongs in tracked fixtures.
+
+## Post manifest
+
+See:
+
+`examples/production/social-post-manifest.example.json`
+
+The manifest defines:
+
+- a stable `post_id`;
+- timezone-aware `scheduled_at`;
+- platform-specific video exports;
+- per-platform captions/titles/configuration;
+- AI-generated-media flag;
+- TikTok compliance/consent receipt.
+
+The scheduler never invents metadata at publish time.
+
+## CLI
+
+Validate without network calls:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing preflight path/to/post.json
+```
+
+Schedule a post:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing schedule path/to/post.json
+```
+
+Run due posts once:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing tick
+```
+
+Run continuously:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing daemon --poll-seconds 30
+```
+
+Inspect local queue state:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing status
+```
+
+A failed or locally blocked platform can be explicitly reset after its cause is fixed:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing retry-platform POST_ID instagram
+```
+
+`RECONCILE_REQUIRED` is deliberately not reset by that command because the prior provider mutation may already have succeeded.
+
+## Instagram Reels
+
+Environment:
+
+```text
+META_GRAPH_VERSION
+INSTAGRAM_USER_ID
+META_PAGE_ACCESS_TOKEN
+```
+
+The current official Meta Instagram publishing flow creates a Reel media container from a publicly reachable `video_url`, polls the container until `FINISHED`, then calls `media_publish`.
+
+Therefore the Instagram export needs an HTTPS `public_url` in the manifest. Phase 5 does not fabricate or assume a hosting provider. Media staging/hosting must be configured separately.
+
+The Instagram Professional account and Meta app permissions must be set up in Meta's developer console before live publication.
+
+Official Meta Postman workspace:
+https://www.postman.com/meta/instagram/overview
+
+## Facebook Reels
+
+Facebook Reels supports local binary upload through the official Reels upload session, so the Phase 5 adapter can upload the local platform export directly.
+
+It uses the same Meta Graph version and Page access token:
+
+```text
+META_GRAPH_VERSION
+META_PAGE_ACCESS_TOKEN
+```
+
+Official Meta Facebook Postman documentation:
+https://www.postman.com/meta/facebook/documentation/r56bjfd/facebook-api
+
+## TikTok Direct Post
+
+For reliable unattended token renewal, configure:
+
+```text
+TIKTOK_CLIENT_KEY
+TIKTOK_CLIENT_SECRET
+TIKTOK_REFRESH_TOKEN
+```
+
+The scheduler refreshes the short-lived access token through TikTok OAuth and stores the rotated refresh token only in ignored local state:
+
+`.production/social-auth/tiktok.json`
+
+For short-lived manual testing only, `TIKTOK_ACCESS_TOKEN` may be used instead.
+
+Direct Post requirements enforced by RBL:
+
+- query Creator Info before posting;
+- requested privacy must be one of the creator's current options;
+- per-post explicit consent receipt;
+- creator preview recorded;
+- preset caption/hashtags remain editable before consent;
+- Music Usage Confirmation recorded;
+- `is_aigc=true` for AI-generated RBL video;
+- TikTok platform export must declare `promotional_overlay_free=true`.
+
+TikTok's Content Sharing Guidelines prohibit applications/integrations from adding promotional branding, logos, watermarks, links, or promotional text to content sent through this API. RBL should therefore render a TikTok-specific clean export without the RBL promotional logo/brand overlay while preserving the story itself.
+
+Unaudited Content Posting API clients are restricted by TikTok; public visibility requires the appropriate app audit/approval and `video.publish` authorization.
+
+Official references:
+
+- https://developers.tiktok.com/docs/en/content-posting-api-get-started
+- https://developers.tiktok.com/docs/en/content-sharing-guidelines
+- https://developers.tiktok.com/docs/en/oauth-user-access-token-management
+
+## YouTube
+
+Configure either a current short-lived token:
+
+```text
+YOUTUBE_ACCESS_TOKEN
+```
+
+or the recommended refreshable server-side credentials:
+
+```text
+YOUTUBE_CLIENT_ID
+YOUTUBE_CLIENT_SECRET
+YOUTUBE_REFRESH_TOKEN
+```
+
+The adapter uses YouTube's resumable upload flow. RBL sets:
+
+- title;
+- description;
+- tags;
+- category;
+- language;
+- made-for-kids status;
+- synthetic-media disclosure.
+
+When intentionally called before the manifest's scheduled datetime, the adapter uses YouTube's native scheduling contract: `privacyStatus=private` plus `status.publishAt`. In the normal RBL daemon flow, the scheduler waits until the due time and publishes then.
+
+New/unverified YouTube Data API projects can be restricted to private uploads until Google completes the required audit.
+
+Official reference:
+https://developers.google.com/youtube/v3/docs/videos/insert
+
+## Scheduling semantics
+
+`scheduled_at` must be ISO-8601 with a timezone offset, for example:
+
+```text
+2026-10-02T19:30:00+08:00
+```
+
+The queue sorts by absolute time and publishes any due platform on the first scheduler tick at or after that instant.
+
+A platform failure does not roll back or re-post successful platforms.
+
+## One-time provider setup still required
+
+Phase 5 implements the API clients and scheduler, but provider developer accounts cannot be truthfully created or approved by repository code.
+
+Before first live publication, the owner must complete the respective provider setup:
+
+1. Meta developer app + Instagram Professional/Page linkage + content-publish permissions.
+2. TikTok developer app + Login/OAuth + Content Posting API + `video.publish` approval/audit.
+3. Google Cloud project + YouTube Data API + OAuth consent/client + any required compliance audit.
+4. Public HTTPS media hosting for Instagram's Reel `video_url`.
+
+After those prerequisites are connected and tokens are configured locally, the scheduler can execute due Phase 5 manifests without another RBL owner prompt, except where a platform itself requires per-post consent (currently TikTok Direct Post).
