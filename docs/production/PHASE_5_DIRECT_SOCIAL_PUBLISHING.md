@@ -7,7 +7,6 @@ Phase 5 adds an RBL-owned scheduler and direct official platform adapters so a v
 Supported targets:
 
 - Instagram Reels
-- Facebook Reels
 - TikTok Direct Post
 - YouTube video upload / Shorts-compatible vertical videos
 
@@ -103,33 +102,21 @@ PYTHONPATH=src python -m rbl_content_engine.publishing retry-platform POST_ID in
 Environment:
 
 ```text
-META_GRAPH_VERSION
+INSTAGRAM_GRAPH_VERSION
 INSTAGRAM_USER_ID
-META_PAGE_ACCESS_TOKEN
+INSTAGRAM_ACCESS_TOKEN
 ```
 
-The current official Meta Instagram publishing flow creates a Reel media container from a publicly reachable `video_url`, polls the container until `FINISHED`, then calls `media_publish`.
+RBL uses **Instagram API with Instagram Login**, not Facebook Login. This route does not require a Facebook Page to be linked to the Instagram professional account. It requires the `instagram_business_basic` and `instagram_business_content_publish` scopes.
+
+The publisher creates a Reel media container against `graph.instagram.com` from a publicly reachable `video_url`, polls the container until `FINISHED`, then calls `media_publish`.
 
 Therefore the Instagram export needs an HTTPS `public_url` in the manifest. Phase 5 does not fabricate or assume a hosting provider. Media staging/hosting must be configured separately.
 
 The Instagram Professional account and Meta app permissions must be set up in Meta's developer console before live publication.
 
-Official Meta Postman workspace:
+Official Meta Instagram workspace:
 https://www.postman.com/meta/instagram/overview
-
-## Facebook Reels
-
-Facebook Reels supports local binary upload through the official Reels upload session, so the Phase 5 adapter can upload the local platform export directly.
-
-It uses the same Meta Graph version and Page access token:
-
-```text
-META_GRAPH_VERSION
-META_PAGE_ACCESS_TOKEN
-```
-
-Official Meta Facebook Postman documentation:
-https://www.postman.com/meta/facebook/documentation/r56bjfd/facebook-api
 
 ## TikTok Direct Post
 
@@ -219,7 +206,7 @@ Phase 5 implements the API clients and scheduler, but provider developer account
 
 Before first live publication, the owner must complete the respective provider setup:
 
-1. Meta developer app + Instagram Professional/Page linkage + content-publish permissions.
+1. Meta developer app + Instagram Professional account + Instagram Login + `instagram_business_basic` / `instagram_business_content_publish` permissions.
 2. TikTok developer app + Login/OAuth + Content Posting API + `video.publish` approval/audit.
 3. Google Cloud project + YouTube Data API + OAuth consent/client + any required compliance audit.
 4. Public HTTPS media hosting for Instagram's Reel `video_url`.
