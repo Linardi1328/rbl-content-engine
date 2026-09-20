@@ -192,7 +192,7 @@ A successfully assembled file must stop at `PENDING_HUMAN_REVIEW`. Phase 4C does
 
 The human owner explicitly authorized a new direct-publishing milestone after approving the first branded Higgsfield video. Follow `docs/production/PHASE_5_DIRECT_SOCIAL_PUBLISHING.md`.
 
-Phase 5 is intentionally scoped to **Instagram Reels, Facebook Reels, TikTok video posts, and YouTube Shorts-style uploads**. It adds an RBL-owned scheduler rather than a third-party social scheduler.
+Phase 5 is intentionally scoped to **Instagram Reels, TikTok video posts, and YouTube Shorts-style uploads**. It adds an RBL-owned scheduler rather than a third-party social scheduler.
 
 Allowed Phase 5 flow:
 
@@ -217,7 +217,7 @@ Hard requirements:
 - AI-generated-content disclosure must be enabled when the target platform exposes a supported field;
 - TikTok Direct Post must query current creator info, honor available privacy options, require explicit per-post consent, preserve editable metadata, require Music Usage Confirmation, and use an export with no application-added promotional logo/watermark/branding;
 - unaudited TikTok clients may be private-only; never claim public posting until the provider confirms it;
-- Instagram Reels requires a publicly reachable HTTPS video URL with the current supported publishing route;
+- Instagram Reels uses Instagram API with Instagram Login and requires a publicly reachable HTTPS video URL with the current supported publishing route;
 - YouTube uploads should set synthetic-media disclosure when applicable; unverified API projects may be private-only;
 - OAuth/account authorization, app review/audit, and provider developer-console setup are one-time external prerequisites and must not be fabricated;
 - provider/API errors fail the affected platform closed; do not silently substitute another account or platform;
