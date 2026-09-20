@@ -63,7 +63,7 @@ def evaluate_keyframe_preflight(
     if quote.provider_id != snapshot.provider_id:
         blockers.append("QUOTE_PROVIDER_MISMATCH")
 
-    required = frozenset({ProviderCapability.KEYFRAME_IMAGE})
+    required = frozenset({ProviderCapability.KEYFRAME_IMAGE}) | scene.required_capabilities
     if not _provider_supports(snapshot, required):
         blockers.append("KEYFRAME_CAPABILITY_UNAVAILABLE")
     if model_id not in snapshot.model_ids:
@@ -92,7 +92,7 @@ def evaluate_keyframe_preflight(
 
 
 def keyframe_is_complete(record: KeyframeRecord) -> bool:
-    return record.qc_status is QCStatus.PASS and record.human_approved
+    return record.qc_status is QCStatus.PASS and record.human_approved and record.locked
 
 
 def evaluate_video_preflight(
@@ -112,7 +112,10 @@ def evaluate_video_preflight(
     if keyframe.scene_id != scene.scene_id:
         blockers.append("START_KEYFRAME_SCENE_MISMATCH")
 
-    required = frozenset({ProviderCapability.IMAGE_TO_VIDEO, ProviderCapability.START_FRAME})
+    required = (
+        frozenset({ProviderCapability.IMAGE_TO_VIDEO, ProviderCapability.START_FRAME})
+        | scene.required_capabilities
+    )
     if not _provider_supports(snapshot, required):
         blockers.append("IMAGE_TO_VIDEO_CAPABILITY_UNAVAILABLE")
     if model_id not in snapshot.model_ids:
@@ -171,9 +174,12 @@ def build_repeatability_records(
     if len(video_ids) != len(set(video_ids)):
         raise ValueError("duplicate video_id in video records")
 
+    known_video_ids = set(video_ids)
     receipt_by_video: dict[str, PublicationReceipt] = {}
     content_to_video: dict[str, str] = {}
     for receipt in publications:
+        if receipt.video_id not in known_video_ids:
+            raise ValueError("publication receipt has no matching video record")
         if receipt.video_id in receipt_by_video:
             raise ValueError("duplicate publication receipt for video")
         if receipt.content_id in content_to_video:
