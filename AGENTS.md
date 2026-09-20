@@ -163,7 +163,7 @@ Hard requirements:
 
 - use only owner-controlled official Higgsfield API credentials;
 - credentials come from `HF_KEY` or `HF_API_KEY` + `HF_API_SECRET`; never commit them;
-- use the official `higgsfield-client` SDK through the optional dependency;
+- use the official `higgsfield-client` SDK in the live production environment;
 - resolve current application/model paths from the live Higgsfield API catalog; never guess them;
 - API USD billing is separate from creator/plugin credits;
 - the first launch project has a US$20 cap unless the human changes it;
