@@ -2,7 +2,9 @@
 
 Evidence-driven manual content pipeline for RBL Productions.
 
-## Current scope: Phase 0 manual pilot
+## Repository scope and current milestone
+
+Phase 0 remains the evidence-to-content foundation. Phase 2A/2B add the accepted offline revenue/audience learning loop. The active development milestone is **Phase 3A — Provider-Neutral Production Contract**, which prepares a controlled production prototype without submitting generation jobs or committing to a recurring provider plan.
 
 Phase 0 turns verified project/GitHub evidence into platform-native content drafts while keeping factual evidence and market strategy separate:
 
@@ -251,6 +253,37 @@ PYTHONPATH=src python -m rbl_content_engine.topview reference-pilot-status ...
 The exact invocation and hard-stop policy are documented in `docs/topview/PHASE_1D_PILOT.md`.
 
 Phase 1D does not call Topview itself from this Python package, does not submit any generation task, and requires actual project spend to remain US$0.
+
+## Phase 3A — provider-neutral production contract
+
+Phase 3A starts the production-development roadmap after accepted Phase 2 while preserving all earlier factual and human-approval boundaries.
+
+The durable policy is:
+
+```text
+RBL evidence / strategy / SceneCards / references / QC
+-> provider-neutral production need
+-> capability + cost preflight
+-> explicit human authorization
+-> replaceable renderer
+```
+
+Prototype progression is:
+
+```text
+PROVE_PIPELINE
+-> PROVE_REPEATABILITY
+-> STABILIZE_PROVIDER
+-> HUMAN PROVIDER / SUBSCRIPTION DECISION
+```
+
+The default stability gate requires at least five completed/published prototype videos, complete retry/QC/cost records, at least three first-party social observation records, and explicit human confirmation. Reaching the gate authorizes no spend by itself.
+
+Free/trial capacity may be used later when legitimately owned by the human/workspace, but RBL must not depend on temporary grants or public/shared API credentials. Provider migrations must preserve SceneCards, ProofLab lineage, reference locks, continuity, QC, and approval gates.
+
+Implementation authority: `docs/production/PHASE_3A_SPEC.md` and `src/rbl_content_engine/production/`.
+
+Phase 3A contains no live provider adapter or generation submission path. A later explicitly authorized milestone may add controlled provider discovery and a single keyframe pilot.
 
 ## Later learning loop
 
