@@ -181,6 +181,7 @@ class KeyframeRecord:
     cost_unit: CostUnit
     qc_status: QCStatus
     human_approved: bool
+    locked: bool
 
     def __post_init__(self) -> None:
         for value, name in (
@@ -196,6 +197,8 @@ class KeyframeRecord:
         _aware_timestamp(self.created_at, "created_at")
         if self.cost_amount < 0:
             raise ValueError("cost_amount must be non-negative")
+        if self.locked and not self.human_approved:
+            raise ValueError("a locked keyframe must be human approved")
 
 
 @dataclass(frozen=True)
