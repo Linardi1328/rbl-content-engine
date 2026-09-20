@@ -14,14 +14,15 @@ When instructions conflict, follow this order:
 6. for repeatability/publication observations, `docs/production/PHASE_3D_SPEC.md`
 7. for provider stabilization, `docs/production/PHASE_3E_SPEC.md`
 8. for official Higgsfield API launch production, `docs/production/PHASE_4A_HIGGSFIELD_API_LAUNCH.md`
-9. `docs/phase-0-spec.md`
-10. `docs/platform-intelligence.md`
-11. for Topview production tasks, `docs/topview/WORKFLOW.md`
-12. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
-13. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
-14. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
-15. the active task/prompt
-16. existing implementation conventions
+9. for first live launch-video generation, `docs/production/PHASE_4C_LAUNCH_VIDEO.md`
+10. `docs/phase-0-spec.md`
+11. `docs/platform-intelligence.md`
+12. for Topview production tasks, `docs/topview/WORKFLOW.md`
+13. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
+14. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
+15. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
+16. the active task/prompt
+17. existing implementation conventions
 
 The human owner has explicitly authorized Phase 2A Revenue & Audience Intelligence as a new offline milestone. Phase 0 remains authoritative for the Phase 0 runner; Phase 2A must not silently mutate or weaken Phase 0 behavior.
 
@@ -174,6 +175,16 @@ Hard requirements:
 - Phase 4A contains no automatic social-posting action.
 
 If the active tool environment cannot create API keys or top up the Higgsfield Cloud prepaid balance, record that as an external prerequisite. Never claim funding occurred unless an authorized provider surface confirms it.
+
+## Phase 4C — First Launch Video Generation
+
+The official Seedance 2.5 Text-to-Video path has been live-verified in the owner environment. Follow `docs/production/PHASE_4C_LAUNCH_VIDEO.md`.
+
+Phase 4C may generate the five tracked 9:16 launch shots within the existing US$20 project ceiling. The generator must be resumable, record request IDs, and never automatically retry a billable mutation after an uncertain or failed outcome.
+
+Generated media and provider URLs remain under ignored `.production/` state. The local assembler may create a 720×1280 review cut only after all planned shots exist.
+
+A successfully assembled file must stop at `PENDING_HUMAN_REVIEW`. Phase 4C does not publish to Instagram, TikTok, YouTube, or any other platform.
 
 ## Topview production operator contract
 

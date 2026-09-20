@@ -23,7 +23,7 @@
       "shot_id": "S01",
       "purpose": "Hook: evidence before prompting",
       "duration_seconds": 4,
-      "application": "LIVE_CATALOG_REQUIRED",
+      "application": "bytedance/seedance-2.5/text-to-video",
       "estimated_cost_usd": "3.00",
       "prompt": "Vertical 9:16 cinematic abstract technology shot. A messy cloud of generic prompt fragments collapses into a clean stack of evidence cards and source documents. Dark neutral studio, precise white interface elements, subtle depth, controlled slow push-in, no brand logos, no people, no readable invented facts."
     },
@@ -31,7 +31,7 @@
       "shot_id": "S02",
       "purpose": "Verification boundary",
       "duration_seconds": 4,
-      "application": "LIVE_CATALOG_REQUIRED",
+      "application": "bytedance/seedance-2.5/text-to-video",
       "estimated_cost_usd": "3.00",
       "prompt": "Vertical 9:16 close cinematic visualization of a claim verification gate. One unsupported generic claim is visibly stopped while a sourced verified claim continues through a clean pipeline. Minimal interface language, no real customer data, no external logos, restrained motion, crisp professional lighting."
     },
@@ -39,15 +39,15 @@
       "shot_id": "S03",
       "purpose": "Platform-native transformation",
       "duration_seconds": 4,
-      "application": "LIVE_CATALOG_REQUIRED",
+      "application": "bytedance/seedance-2.5/text-to-video",
       "estimated_cost_usd": "3.00",
-      "prompt": "Vertical 9:16 motion-design shot. One verified content card splits into three distinct short-form treatments represented by generic vertical social-video frames: fast hook, visual storyboard, platform-native pacing. Do not imitate any platform logo or interface exactly. Clean modern studio aesthetic, controlled camera movement."
+      "prompt": "Vertical 9:16 abstract cinematic motion-design scene. A single clean neutral content card smoothly transforms into three distinct geometric visual compositions representing alternate creative treatments. Minimal rectangles, panels, lines, and motion cues only. No people, no bodies, no faces, no logos, no social-media interfaces, no readable text, no brands, no medical or adult themes. Dark neutral studio aesthetic, polished professional lighting, restrained motion, controlled camera movement, clear object continuity."
     },
     {
       "shot_id": "S04",
       "purpose": "Controlled generation and QC",
       "duration_seconds": 4,
-      "application": "LIVE_CATALOG_REQUIRED",
+      "application": "bytedance/seedance-2.5/text-to-video",
       "estimated_cost_usd": "3.00",
       "prompt": "Vertical 9:16 cinematic production-control sequence. A storyboard keyframe becomes a moving clip, then passes through visible checks for continuity, object count, references and budget. Abstract production UI only, no real private data, no logos, no people, polished restrained motion."
     },
@@ -55,9 +55,13 @@
       "shot_id": "S05",
       "purpose": "Brand close and review gate",
       "duration_seconds": 4,
-      "application": "LIVE_CATALOG_REQUIRED",
+      "application": "bytedance/seedance-2.5/text-to-video",
       "estimated_cost_usd": "3.00",
       "prompt": "Vertical 9:16 premium closing shot. A clean RBL Content Engine wordmark-style text treatment on a dark neutral background with subtle dimensional data lines converging into one approved content card. Include only the exact text 'RBL Content Engine'. Elegant slow camera settle, no extra claims, no external logos."
     }
-  ]
+  ],
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "resolution": "720p",
+  "output_format": "mp4",
+  "generate_audio": false
 }
