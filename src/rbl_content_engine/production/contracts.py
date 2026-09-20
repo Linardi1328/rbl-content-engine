@@ -42,6 +42,8 @@ class ProviderSnapshot:
     observed_at: str
     capabilities: frozenset[ProviderCapability]
     model_ids: tuple[str, ...] = ()
+    executable_model_ids: tuple[str, ...] = ()
+    blocked_model_ids: tuple[str, ...] = ()
     source: str = "LIVE_READ_ONLY"
 
     def __post_init__(self) -> None:
@@ -54,6 +56,20 @@ class ProviderSnapshot:
         _aware_timestamp(self.observed_at, "observed_at")
         if len(set(self.model_ids)) != len(self.model_ids):
             raise ValueError("model_ids must be unique")
+        if len(set(self.executable_model_ids)) != len(self.executable_model_ids):
+            raise ValueError("executable_model_ids must be unique")
+        if len(set(self.blocked_model_ids)) != len(self.blocked_model_ids):
+            raise ValueError("blocked_model_ids must be unique")
+        if set(self.executable_model_ids) & set(self.blocked_model_ids):
+            raise ValueError("a model cannot be both executable and blocked")
+        known = set(self.model_ids)
+        if not set(self.executable_model_ids).issubset(known):
+            raise ValueError("executable models must be present in model_ids")
+        if not set(self.blocked_model_ids).issubset(known):
+            raise ValueError("blocked models must be present in model_ids")
+
+    def model_is_executable(self, model_id: str) -> bool:
+        return model_id in self.executable_model_ids
 
 
 @dataclass(frozen=True)
