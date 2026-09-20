@@ -110,7 +110,7 @@ class HiggsfieldApiLaunchTests(unittest.TestCase):
         )
         self.assertLessEqual(Decimal("15.00"), Decimal(payload["project_budget_usd"]))
         self.assertTrue(
-            all(shot["application"] == "LIVE_CATALOG_REQUIRED" for shot in payload["shots"])
+            all(shot["application"] == "bytedance/seedance-2.5/text-to-video" for shot in payload["shots"])
         )
 
     def test_adapter_submits_exactly_once_and_preserves_request_id(self) -> None:
