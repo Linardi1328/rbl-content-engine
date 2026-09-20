@@ -13,14 +13,15 @@ When instructions conflict, follow this order:
 5. for complete video prototypes, `docs/production/PHASE_3C_SPEC.md`
 6. for repeatability/publication observations, `docs/production/PHASE_3D_SPEC.md`
 7. for provider stabilization, `docs/production/PHASE_3E_SPEC.md`
-8. `docs/phase-0-spec.md`
-9. `docs/platform-intelligence.md`
-10. for Topview production tasks, `docs/topview/WORKFLOW.md`
-11. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
-12. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
-13. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
-14. the active task/prompt
-15. existing implementation conventions
+8. for official Higgsfield API launch production, `docs/production/PHASE_4A_HIGGSFIELD_API_LAUNCH.md`
+9. `docs/phase-0-spec.md`
+10. `docs/platform-intelligence.md`
+11. for Topview production tasks, `docs/topview/WORKFLOW.md`
+12. for Topview capability/tool routing, `docs/topview/TOOL_MAP.md`
+13. for live Topview capability discovery, `docs/topview/DISCOVERY.md`
+14. for the controlled preflight/reference pilot, `docs/topview/PHASE_1D_PILOT.md`
+15. the active task/prompt
+16. existing implementation conventions
 
 The human owner has explicitly authorized Phase 2A Revenue & Audience Intelligence as a new offline milestone. Phase 0 remains authoritative for the Phase 0 runner; Phase 2A must not silently mutate or weaken Phase 0 behavior.
 
@@ -151,6 +152,28 @@ Model discovery, cost estimation, and execution eligibility are separate facts. 
 Automatic social publication remains prohibited. Phase 3D accepts only human-confirmed `MANUAL_EXTERNAL` publication receipts and matching first-party observation records. Never fabricate published content IDs, publication timestamps, or social metrics from a generated file.
 
 Stage 3E may establish provider-stabilization readiness but must leave `provider_selection = HUMAN_DECISION_REQUIRED`. Reaching the stability gate does not automatically buy a Higgsfield plan, activate a trial, migrate providers, or create a paid API account.
+
+## Phase 4A — Official Higgsfield API Launch Video
+
+The human owner explicitly authorized integration of Higgsfield's official pay-as-you-go API and funding/generation of the first launch-video prototype, with a mandatory human review before publication.
+
+Follow `docs/production/PHASE_4A_HIGGSFIELD_API_LAUNCH.md`.
+
+Hard requirements:
+
+- use only owner-controlled official Higgsfield API credentials;
+- credentials come from `HF_KEY` or `HF_API_KEY` + `HF_API_SECRET`; never commit them;
+- use the official `higgsfield-client` SDK in the live production environment;
+- resolve current application/model paths from the live Higgsfield API catalog; never guess them;
+- API USD billing is separate from creator/plugin credits;
+- the first launch project has a US$20 cap unless the human changes it;
+- quote/estimate before each paid shot and count retries;
+- billable mutations are never automatically retried after timeouts or uncertain outcomes;
+- the final assembled video must stop at `PENDING_HUMAN_REVIEW`;
+- only explicit human approval can transition to `APPROVED_FOR_PUBLICATION`;
+- Phase 4A contains no automatic social-posting action.
+
+If the active tool environment cannot create API keys or top up the Higgsfield Cloud prepaid balance, record that as an external prerequisite. Never claim funding occurred unless an authorized provider surface confirms it.
 
 ## Topview production operator contract
 

@@ -25,3 +25,10 @@ examples/*/output/
 .production/provider-snapshots.json
 .production/stage3-live.json
 .production/stage3-outputs/
+
+
+# Live Higgsfield API launch metadata and outputs.
+.production/higgsfield-api-state.json
+.production/higgsfield-api-provider.json
+.production/rbl-launch-video.json
+.production/launch-video-outputs/
