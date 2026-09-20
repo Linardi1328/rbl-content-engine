@@ -6,6 +6,7 @@ Runtime request IDs, media URLs, and downloaded outputs stay under ignored .prod
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -157,7 +158,25 @@ def download_video(url: str, destination: Path) -> None:
     validate_mp4(destination)
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Generate the resumable RBL Seedance 2.5 launch shots."
+    )
+    parser.add_argument(
+        "--retry-shot",
+        action="append",
+        default=[],
+        help=(
+            "Explicitly allow a new billable submission for a terminally failed shot. "
+            "May be repeated. Example: --retry-shot S02"
+        ),
+    )
+    return parser
+
+
 def main() -> int:
+    args = build_parser().parse_args()
+    retry_shots = set(args.retry_shot)
     if not ENV_FILE.is_file():
         print(
             ".env.local is missing. Configure HF_KEY locally with "
@@ -189,6 +208,25 @@ def main() -> int:
             validate_mp4(local_path)
             print(f"{shot_id}: already complete; skipping billable submission.")
             continue
+
+        terminal_statuses = {
+            "FAILED",
+            "CANCELED",
+            "MODERATED",
+            "PROVIDER_ERROR",
+            "OUTPUT_ERROR",
+        }
+        if (
+            isinstance(existing, dict)
+            and existing.get("status") in terminal_statuses
+            and shot_id not in retry_shots
+        ):
+            print(
+                f"{shot_id}: previous state is {existing.get('status')}. "
+                f"Inspect request {existing.get('request_id')} first. "
+                f"A new paid attempt requires --retry-shot {shot_id}."
+            )
+            return 3
 
         estimated_cost = str(shot["estimated_cost_usd"])
         print(
