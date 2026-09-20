@@ -82,6 +82,7 @@ def keyframe(*, approved: bool = True, qc: QCStatus = QCStatus.PASS) -> Keyframe
         cost_unit=CostUnit.CREDITS,
         qc_status=qc,
         human_approved=approved,
+        locked=approved,
     )
 
 
@@ -247,6 +248,41 @@ class Stage3ProductionTests(unittest.TestCase):
         self.assertIn("START_KEYFRAME_NOT_APPROVED", result.blockers)
         self.assertIn("MODEL_NOT_EXECUTABLE", result.blockers)
 
+
+    def test_video_preflight_requires_locked_keyframe(self) -> None:
+        unlocked = KeyframeRecord(
+            keyframe_id="KF_S01_002",
+            scene_id="S01",
+            provider_id="higgsfield",
+            model_id="z_image",
+            job_id="job-keyframe-2",
+            output_id="output-keyframe-2",
+            created_at="2026-09-20T17:06:00+08:00",
+            cost_amount=Decimal("0.15"),
+            cost_unit=CostUnit.CREDITS,
+            qc_status=QCStatus.PASS,
+            human_approved=True,
+            locked=False,
+        )
+        quote = CostQuote("higgsfield", Decimal("8"), CostUnit.CREDITS, "live")
+        auth = GenerationAuthorization(
+            "AUTH-VID-2",
+            "higgsfield",
+            GenerationScope.VIDEO_DRAFT,
+            True,
+            "2026-09-20T17:02:00+08:00",
+            max_credits=Decimal("10"),
+        )
+        result = evaluate_video_preflight(
+            scene(),
+            unlocked,
+            snapshot(),
+            quote,
+            auth,
+            model_id="kling3_0_turbo",
+        )
+        self.assertIn("START_KEYFRAME_NOT_APPROVED", result.blockers)
+
     def test_video_preflight_rejects_long_clip_without_justification(self) -> None:
         long_scene = SceneCard(
             scene_id="S01",
@@ -289,6 +325,19 @@ class Stage3ProductionTests(unittest.TestCase):
                 method=PublicationMethod.MANUAL_EXTERNAL,
                 human_confirmed=False,
             )
+
+
+    def test_publication_receipt_requires_matching_video_record(self) -> None:
+        orphan = PublicationReceipt(
+            video_id="VID_99",
+            platform="instagram",
+            content_id="IG_99",
+            published_at="2026-10-09T12:00:00+08:00",
+            method=PublicationMethod.MANUAL_EXTERNAL,
+            human_confirmed=True,
+        )
+        with self.assertRaisesRegex(ValueError, "no matching video record"):
+            build_repeatability_records((video(1),), (orphan,), ())
 
     def test_repeatability_rejects_observation_without_publication(self) -> None:
         with self.assertRaisesRegex(ValueError, "no matching publication receipt"):
