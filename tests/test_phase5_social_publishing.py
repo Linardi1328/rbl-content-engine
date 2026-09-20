@@ -10,7 +10,6 @@ from typing import Any, Mapping
 from unittest.mock import patch
 
 from rbl_content_engine.publishing.core import (
-    FacebookReelsPublisher,
     HttpResponse,
     InstagramReelsPublisher,
     PublishBlocked,
@@ -93,11 +92,6 @@ def make_manifest(tmp: Path, scheduled_at: str = "2026-10-02T19:30:00+08:00") ->
                 "enabled": True,
                 "caption": "Do good.",
                 "share_to_feed": True,
-            },
-            "facebook": {
-                "enabled": True,
-                "title": "Do good",
-                "description": "Character matters.",
             },
             "tiktok": {
                 "enabled": True,
@@ -190,7 +184,7 @@ class ScheduleQueueTests(unittest.TestCase):
                     raise PublishError("provider failed")
 
             def factory(platform: str) -> Any:
-                return Bad() if platform == "facebook" else Good()
+                return Bad() if platform == "instagram" else Good()
 
             events = publish_due_jobs(
                 queue,
@@ -199,8 +193,7 @@ class ScheduleQueueTests(unittest.TestCase):
                 publisher_factory=factory,
             )
             state = queue.jobs[0].platforms
-            self.assertEqual(state["facebook"]["status"], "FAILED")
-            self.assertEqual(state["instagram"]["status"], "PUBLISHED")
+            self.assertEqual(state["instagram"]["status"], "FAILED")
             self.assertEqual(state["youtube"]["status"], "PUBLISHED")
             # Fake TikTok publisher returns PUBLISHED directly in this test.
             self.assertEqual(state["tiktok"]["status"], "PUBLISHED")
@@ -266,35 +259,9 @@ class InstagramPublisherTests(unittest.TestCase):
             self.assertEqual(result["provider_id"], "media-1")
             self.assertEqual(len(transport.calls), 3)
             self.assertIn("/media_publish", transport.calls[2]["url"])
-
-
-class FacebookPublisherTests(unittest.TestCase):
-    def test_local_reel_upload_flow(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            manifest = make_manifest(Path(directory))
-            transport = FakeTransport(
-                [
-                    response(
-                        {
-                            "video_id": "fb-video-1",
-                            "upload_url": "https://upload.example.test/fb",
-                        }
-                    ),
-                    response({"success": True}),
-                    response({"success": True}),
-                ]
-            )
-            publisher = FacebookReelsPublisher(
-                graph_version="v99.0",
-                access_token="secret",
-                transport=transport,
-            )
-            result = publisher.publish(
-                manifest, manifest["platforms"]["facebook"]
-            )
-            self.assertEqual(result["provider_id"], "fb-video-1")
-            self.assertEqual(transport.calls[1]["method"], "POST")
-            self.assertGreater(len(transport.calls[1]["body"]), 1000)
+            self.assertTrue(transport.calls[0]["url"].startswith("https://graph.instagram.com/"))
+            self.assertTrue(transport.calls[1]["url"].startswith("https://graph.instagram.com/"))
+            self.assertTrue(transport.calls[2]["url"].startswith("https://graph.instagram.com/"))
 
 
 class TikTokPublisherTests(unittest.TestCase):
