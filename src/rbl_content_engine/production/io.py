@@ -42,6 +42,7 @@ def load_stage3_evaluation(path: str | Path) -> Stage3Evaluation:
             cost_unit=CostUnit(item["cost_unit"]),
             qc_status=QCStatus(item["qc_status"]),
             human_approved=bool(item["human_approved"]),
+            locked=bool(item["locked"]),
         )
         for item in payload.get("keyframes", [])
     )
