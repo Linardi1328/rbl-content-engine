@@ -11,6 +11,7 @@ import os
 import re
 import tempfile
 import urllib.request
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -63,7 +64,7 @@ def load_plan(path: Path = PLAN_FILE) -> dict[str, Any]:
         raise ValueError("launch plan must contain shots")
 
     ids: set[str] = set()
-    estimated_total = 0.0
+    estimated_total = Decimal("0")
     for shot in shots:
         if not isinstance(shot, dict):
             raise ValueError("every launch shot must be an object")
@@ -78,12 +79,12 @@ def load_plan(path: Path = PLAN_FILE) -> dict[str, Any]:
             raise ValueError(f"{shot_id}: prototype duration must remain 4-8 seconds")
         if not str(shot.get("prompt", "")).strip():
             raise ValueError(f"{shot_id}: prompt must not be empty")
-        estimated_total += float(shot.get("estimated_cost_usd", 0))
+        estimated_total += Decimal(str(shot.get("estimated_cost_usd", "0")))
 
-    project_budget = float(plan.get("project_budget_usd", 0))
+    project_budget = Decimal(str(plan.get("project_budget_usd", "0")))
     if project_budget <= 0 or estimated_total > project_budget:
         raise ValueError("planned launch spend exceeds project budget")
-    if project_budget > 20:
+    if project_budget > Decimal("20"):
         raise ValueError("Phase 4C launch budget may not exceed US$20")
 
     return plan
@@ -287,7 +288,10 @@ def main() -> int:
 
     state["status"] = "GENERATED"
     state["estimated_spend_usd"] = str(
-        sum(float(shot["estimated_cost_usd"]) for shot in plan["shots"])
+        sum(
+            (Decimal(str(shot["estimated_cost_usd"])) for shot in plan["shots"]),
+            Decimal("0"),
+        )
     )
     write_state(state)
 
