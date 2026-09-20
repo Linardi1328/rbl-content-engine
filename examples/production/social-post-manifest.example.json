@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "post_id": "RBL-STORY-001",
+  "scheduled_at": "2026-10-02T19:30:00+08:00",
+  "assets": {
+    "default": {
+      "path": ".production/final-exports/RBL-STORY-001/master.mp4",
+      "ai_generated": true
+    },
+    "instagram": {
+      "path": ".production/final-exports/RBL-STORY-001/instagram.mp4",
+      "public_url": "https://media.example.com/rbl/RBL-STORY-001-instagram.mp4",
+      "ai_generated": true
+    },
+    "tiktok": {
+      "path": ".production/final-exports/RBL-STORY-001/tiktok-clean.mp4",
+      "ai_generated": true,
+      "promotional_overlay_free": true
+    },
+    "youtube": {
+      "path": ".production/final-exports/RBL-STORY-001/youtube.mp4",
+      "ai_generated": true
+    }
+  },
+  "platforms": {
+    "instagram": {
+      "enabled": true,
+      "caption": "Character is what you choose when no one is watching. #RBLProductions #Character #DoGood",
+      "share_to_feed": true
+    },
+    "facebook": {
+      "enabled": true,
+      "title": "What You Do When No One's Watching",
+      "description": "Character is built in the quiet choices. A short story from RBL Productions."
+    },
+    "tiktok": {
+      "enabled": true,
+      "caption": "The smallest choice can reveal the biggest part of your character. #Character #DoGood",
+      "privacy_level": "PUBLIC_TO_EVERYONE",
+      "disable_duet": false,
+      "disable_comment": false,
+      "disable_stitch": false,
+      "video_cover_timestamp_ms": 1000,
+      "brand_organic_toggle": false,
+      "consent": {
+        "confirmed": true,
+        "confirmed_at": "2026-10-02T18:30:00+08:00",
+        "previewed": true,
+        "metadata_editable": true,
+        "music_usage_confirmed": true
+      }
+    },
+    "youtube": {
+      "enabled": true,
+      "title": "What You Do When No One's Watching | RBL Productions",
+      "description": "A short story about integrity, character, and doing the right thing when nobody is watching.",
+      "tags": [
+        "RBL Productions",
+        "character",
+        "integrity",
+        "good deeds"
+      ],
+      "category_id": "22",
+      "default_language": "en",
+      "made_for_kids": false,
+      "privacy_status": "public"
+    }
+  }
+}
