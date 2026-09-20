@@ -1,0 +1,182 @@
+{
+  "schema_version": "0.1.0",
+  "keyframes": [
+    {
+      "keyframe_id": "KF_S01_001",
+      "scene_id": "S01",
+      "provider_id": "synthetic-renderer",
+      "model_id": "synthetic-image",
+      "job_id": "synthetic-kf-job-001",
+      "output_id": "synthetic-kf-output-001",
+      "created_at": "2026-09-01T10:00:00+08:00",
+      "cost_amount": "0",
+      "cost_unit": "FREE_GENERATION",
+      "qc_status": "PASS",
+      "human_approved": true
+    }
+  ],
+  "videos": [
+    {
+      "video_id": "VID_01",
+      "scene_id": "S01",
+      "provider_id": "synthetic-renderer",
+      "model_id": "synthetic-video",
+      "job_ids": [
+        "synthetic-video-job-001"
+      ],
+      "output_id": "synthetic-video-output-001",
+      "created_at": "2026-09-02T10:00:00+08:00",
+      "start_keyframe_id": "KF_S01_001",
+      "duration_seconds": "5",
+      "retry_count": 1,
+      "actual_cost_amount": "0",
+      "actual_cost_unit": "FREE_GENERATION",
+      "qc_status": "PASS",
+      "human_approved": true
+    },
+    {
+      "video_id": "VID_02",
+      "scene_id": "S01",
+      "provider_id": "synthetic-renderer",
+      "model_id": "synthetic-video",
+      "job_ids": [
+        "synthetic-video-job-002"
+      ],
+      "output_id": "synthetic-video-output-002",
+      "created_at": "2026-09-03T10:00:00+08:00",
+      "start_keyframe_id": "KF_S01_001",
+      "duration_seconds": "5",
+      "retry_count": 0,
+      "actual_cost_amount": "0",
+      "actual_cost_unit": "FREE_GENERATION",
+      "qc_status": "PASS",
+      "human_approved": true
+    },
+    {
+      "video_id": "VID_03",
+      "scene_id": "S01",
+      "provider_id": "synthetic-renderer",
+      "model_id": "synthetic-video",
+      "job_ids": [
+        "synthetic-video-job-003"
+      ],
+      "output_id": "synthetic-video-output-003",
+      "created_at": "2026-09-04T10:00:00+08:00",
+      "start_keyframe_id": "KF_S01_001",
+      "duration_seconds": "5",
+      "retry_count": 1,
+      "actual_cost_amount": "0",
+      "actual_cost_unit": "FREE_GENERATION",
+      "qc_status": "PASS",
+      "human_approved": true
+    },
+    {
+      "video_id": "VID_04",
+      "scene_id": "S01",
+      "provider_id": "synthetic-renderer",
+      "model_id": "synthetic-video",
+      "job_ids": [
+        "synthetic-video-job-004"
+      ],
+      "output_id": "synthetic-video-output-004",
+      "created_at": "2026-09-05T10:00:00+08:00",
+      "start_keyframe_id": "KF_S01_001",
+      "duration_seconds": "5",
+      "retry_count": 0,
+      "actual_cost_amount": "0",
+      "actual_cost_unit": "FREE_GENERATION",
+      "qc_status": "PASS",
+      "human_approved": true
+    },
+    {
+      "video_id": "VID_05",
+      "scene_id": "S01",
+      "provider_id": "synthetic-renderer",
+      "model_id": "synthetic-video",
+      "job_ids": [
+        "synthetic-video-job-005"
+      ],
+      "output_id": "synthetic-video-output-005",
+      "created_at": "2026-09-06T10:00:00+08:00",
+      "start_keyframe_id": "KF_S01_001",
+      "duration_seconds": "5",
+      "retry_count": 1,
+      "actual_cost_amount": "0",
+      "actual_cost_unit": "FREE_GENERATION",
+      "qc_status": "PASS",
+      "human_approved": true
+    }
+  ],
+  "publications": [
+    {
+      "video_id": "VID_01",
+      "platform": "instagram",
+      "content_id": "SYNTH_IG_01",
+      "published_at": "2026-09-07T12:00:00+08:00",
+      "method": "MANUAL_EXTERNAL",
+      "human_confirmed": true
+    },
+    {
+      "video_id": "VID_02",
+      "platform": "instagram",
+      "content_id": "SYNTH_IG_02",
+      "published_at": "2026-09-08T12:00:00+08:00",
+      "method": "MANUAL_EXTERNAL",
+      "human_confirmed": true
+    },
+    {
+      "video_id": "VID_03",
+      "platform": "instagram",
+      "content_id": "SYNTH_IG_03",
+      "published_at": "2026-09-09T12:00:00+08:00",
+      "method": "MANUAL_EXTERNAL",
+      "human_confirmed": true
+    },
+    {
+      "video_id": "VID_04",
+      "platform": "instagram",
+      "content_id": "SYNTH_IG_04",
+      "published_at": "2026-09-10T12:00:00+08:00",
+      "method": "MANUAL_EXTERNAL",
+      "human_confirmed": true
+    },
+    {
+      "video_id": "VID_05",
+      "platform": "instagram",
+      "content_id": "SYNTH_IG_05",
+      "published_at": "2026-09-11T12:00:00+08:00",
+      "method": "MANUAL_EXTERNAL",
+      "human_confirmed": true
+    }
+  ],
+  "observations": [
+    {
+      "content_id": "SYNTH_IG_01",
+      "platform": "instagram",
+      "observed_at": "2026-09-14T12:00:00+08:00",
+      "metrics": {
+        "views": "1000",
+        "likes": "80"
+      }
+    },
+    {
+      "content_id": "SYNTH_IG_02",
+      "platform": "instagram",
+      "observed_at": "2026-09-15T12:00:00+08:00",
+      "metrics": {
+        "views": "2000",
+        "likes": "160"
+      }
+    },
+    {
+      "content_id": "SYNTH_IG_03",
+      "platform": "instagram",
+      "observed_at": "2026-09-16T12:00:00+08:00",
+      "metrics": {
+        "views": "3000",
+        "likes": "240"
+      }
+    }
+  ],
+  "human_confirmed_stability": true
+}
