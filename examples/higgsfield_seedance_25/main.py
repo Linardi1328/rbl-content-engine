@@ -38,8 +38,17 @@ def _extract_video_url(result: Mapping[str, Any]) -> str:
 
 
 def main() -> int:
-    # Keep credentials local and server-side. Do not override an already-configured
-    # environment variable, and never read/print its value in application code.
+    # Require the explicit ignored local file rather than silently using ambient
+    # credentials from another tool/runtime.
+    if not ENV_FILE.is_file():
+        print(
+            ".env.local is missing. Configure HF_KEY locally with "
+            "scripts/configure_higgsfield_env.py; do not paste it into chat."
+        )
+        return 2
+
+    # Keep credentials local and server-side. Never read/print the value in
+    # application code; python-dotenv loads it and the official SDK consumes it.
     load_dotenv(ENV_FILE, override=False)
 
     if "HF_KEY" not in os.environ:
