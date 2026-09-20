@@ -30,6 +30,7 @@ from typing import Any, Callable, Mapping
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_QUEUE = ROOT / ".production" / "social-publishing-queue.json"
 DEFAULT_RECEIPTS = ROOT / ".production" / "publication-receipts"
+DEFAULT_AUTH_DIR = ROOT / ".production" / "social-auth"
 SUPPORTED_PLATFORMS = ("instagram", "facebook", "tiktok", "youtube")
 
 
@@ -504,8 +505,83 @@ class TikTokPublisher:
 
     @classmethod
     def from_env(cls, **kwargs: Any) -> "TikTokPublisher":
-        env = _require_env("TIKTOK_ACCESS_TOKEN")
-        return cls(access_token=env["TIKTOK_ACCESS_TOKEN"], **kwargs)
+        transport = kwargs.pop("transport", None) or HttpTransport()
+        client_key = os.environ.get("TIKTOK_CLIENT_KEY", "").strip()
+        client_secret = os.environ.get("TIKTOK_CLIENT_SECRET", "").strip()
+        configured_refresh = os.environ.get("TIKTOK_REFRESH_TOKEN", "").strip()
+        state_override = os.environ.get("TIKTOK_TOKEN_STATE_PATH", "").strip()
+        state_path = (
+            Path(state_override).expanduser()
+            if state_override
+            else DEFAULT_AUTH_DIR / "tiktok.json"
+        )
+
+        refresh_token = configured_refresh
+        if state_path.is_file():
+            try:
+                stored = json.loads(state_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise PublishBlocked(
+                    f"TikTok token state is unreadable: {state_path}"
+                ) from exc
+            stored_refresh = stored.get("refresh_token")
+            if isinstance(stored_refresh, str) and stored_refresh:
+                refresh_token = stored_refresh
+
+        if client_key and client_secret and refresh_token:
+            body = urllib.parse.urlencode(
+                {
+                    "client_key": client_key,
+                    "client_secret": client_secret,
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                }
+            ).encode("utf-8")
+            payload = transport.request(
+                "POST",
+                "https://open.tiktokapis.com/v2/oauth/token/",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Cache-Control": "no-cache",
+                },
+                body=body,
+            ).json()
+            access_token = payload.get("access_token")
+            new_refresh = payload.get("refresh_token")
+            if not isinstance(access_token, str) or not access_token:
+                description = payload.get("error_description") or payload.get("error")
+                raise PublishBlocked(
+                    "TikTok token refresh failed"
+                    + (f": {description}" if description else "")
+                )
+            if not isinstance(new_refresh, str) or not new_refresh:
+                new_refresh = refresh_token
+
+            state_path.parent.mkdir(parents=True, exist_ok=True)
+            state_payload = {
+                "refresh_token": new_refresh,
+                "scope": payload.get("scope"),
+                "open_id": payload.get("open_id"),
+                "updated_at": _utc_now().isoformat(),
+            }
+            state_path.write_text(
+                json.dumps(state_payload, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            try:
+                state_path.chmod(0o600)
+            except OSError:
+                pass
+            return cls(access_token=access_token, transport=transport, **kwargs)
+
+        access_token = os.environ.get("TIKTOK_ACCESS_TOKEN", "").strip()
+        if not access_token:
+            raise PublishBlocked(
+                "configure TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET + "
+                "TIKTOK_REFRESH_TOKEN for unattended refresh, or "
+                "TIKTOK_ACCESS_TOKEN for short-lived testing"
+            )
+        return cls(access_token=access_token, transport=transport, **kwargs)
 
     def _post(self, path: str, payload: Mapping[str, Any] | None = None) -> dict[str, Any]:
         result = _json_request(
