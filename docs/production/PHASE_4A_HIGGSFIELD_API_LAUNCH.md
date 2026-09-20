@@ -14,7 +14,7 @@ No social publication may occur until the human owner explicitly approves the fi
 
 Use the official Python SDK:
 
-`higgsfield-client>=0.1.0,<0.2.0`
+`higgsfield-client>=0.1.0,<0.2.0` plus `python-dotenv>=1.0.0,<2.0.0`
 
 Credentials are supplied only through environment variables:
 
@@ -50,11 +50,42 @@ The current ChatGPT Higgsfield integration does not expose key creation or Cloud
 
 ## Install
 
+Use the repository's existing package manager and lockfile:
+
 ```bash
-python -m pip install 'higgsfield-client>=0.1.0,<0.2.0'
+uv sync --locked
 ```
 
-Core/offline RBL remains dependency-light: the official SDK is not part of the locked core environment and is lazy-loaded only when a live Higgsfield API action is invoked.
+The official SDK and dotenv loader are now part of the locked Python environment. Network/API execution still occurs only when a live Higgsfield action is explicitly run.
+
+## Seedance 2.5 SDK smoke test
+
+Official application path:
+
+`bytedance/seedance-2.5/text-to-video`
+
+Local-only credential setup:
+
+```bash
+uv run python scripts/configure_higgsfield_env.py
+```
+
+This prompts for `HF_KEY` in the local terminal with hidden input and writes ignored `.env.local` in `key-id:key-secret` format. Never paste the key into chat.
+
+Billable smoke test:
+
+```bash
+uv run python examples/higgsfield_seedance_25/main.py
+```
+
+The example uses the official synchronous `higgsfield_client.subscribe()` call with:
+
+- prompt `A cinematic scene at sunset`;
+- duration `5`;
+- resolution `720p`;
+- aspect ratio `16:9`.
+
+A URL is printed only after successful terminal completion. Failed, canceled, moderated, credential, API, or malformed-result states exit non-zero and do not claim success.
 
 ## Launch plan
 

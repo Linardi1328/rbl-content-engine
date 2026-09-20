@@ -328,13 +328,29 @@ tracked 9:16 launch plan
 -> manual/external publication
 ```
 
-The official API SDK is intentionally installed only in the live production environment:
+The project now installs the official Python SDK and local environment loader through its existing `uv` lock:
 
 ```bash
-python -m pip install 'higgsfield-client>=0.1.0,<0.2.0'
+uv sync --locked
 ```
 
-Credentials must remain local in `HF_KEY` or `HF_API_KEY` + `HF_API_SECRET`.
+The Seedance 2.5 smoke test uses the official application path:
+
+`bytedance/seedance-2.5/text-to-video`
+
+Credentials remain local in ignored `.env.local` as `HF_KEY=key-id:key-secret`. Configure them without exposing the value:
+
+```bash
+uv run python scripts/configure_higgsfield_env.py
+```
+
+Then run the billable smoke test:
+
+```bash
+uv run python examples/higgsfield_seedance_25/main.py
+```
+
+It requests the prompt `A cinematic scene at sunset` at 5 seconds, 720p, 16:9, waits for terminal completion via the official SDK's synchronous `subscribe()`, and prints a video URL only on success.
 
 Tracked launch plan:
 

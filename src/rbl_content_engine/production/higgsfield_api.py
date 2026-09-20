@@ -17,6 +17,7 @@ from .providers import CostQuote, CostUnit
 
 
 HIGGSFIELD_API_PROVIDER_ID = "higgsfield_api"
+SEEDANCE_25_TEXT_TO_VIDEO_APPLICATION = "bytedance/seedance-2.5/text-to-video"
 
 
 class HiggsfieldSdkClient(Protocol):
@@ -67,8 +68,7 @@ def load_official_higgsfield_client() -> HiggsfieldSdkClient:
         module = import_module("higgsfield_client")
     except ModuleNotFoundError as exc:
         raise RuntimeError(
-            "official Higgsfield API SDK is not installed; "
-            "install the 'higgsfield-api' optional dependency"
+            "official Higgsfield API SDK is not installed; run uv sync --locked"
         ) from exc
 
     client_type = getattr(module, "SyncClient", None)

@@ -98,6 +98,7 @@ __all__ += [
 
 from .higgsfield_api import (
     HIGGSFIELD_API_PROVIDER_ID,
+    SEEDANCE_25_TEXT_TO_VIDEO_APPLICATION,
     HiggsfieldApiGenerationRequest,
     HiggsfieldApiSubmission,
     extract_first_media_url,
@@ -118,6 +119,7 @@ from .launch import (
 
 __all__ += [
     "HIGGSFIELD_API_PROVIDER_ID",
+    "SEEDANCE_25_TEXT_TO_VIDEO_APPLICATION",
     "HiggsfieldApiGenerationRequest",
     "HiggsfieldApiSubmission",
     "extract_first_media_url",
