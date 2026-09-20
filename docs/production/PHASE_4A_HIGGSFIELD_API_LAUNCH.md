@@ -51,10 +51,10 @@ The current ChatGPT Higgsfield integration does not expose key creation or Cloud
 ## Install
 
 ```bash
-python -m pip install -e '.[higgsfield-api]'
+python -m pip install 'higgsfield-client>=0.1.0,<0.2.0'
 ```
 
-Core/offline RBL remains dependency-light: the official SDK is optional and is lazy-loaded only when a live Higgsfield API action is invoked.
+Core/offline RBL remains dependency-light: the official SDK is not part of the locked core environment and is lazy-loaded only when a live Higgsfield API action is invoked.
 
 ## Launch plan
 
