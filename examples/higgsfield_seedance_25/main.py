@@ -11,6 +11,7 @@ file into the process environment and the official Higgsfield SDK consumes HF_KE
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -21,6 +22,27 @@ MODEL = "bytedance/seedance-2.5/text-to-video"
 PROMPT = "A cinematic scene at sunset"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE = PROJECT_ROOT / ".env.local"
+
+
+def _safe_provider_error(exc: Exception) -> str:
+    """Return a useful provider error while redacting credential-like material."""
+    message = str(exc).strip() or exc.__class__.__name__
+    message = re.sub(
+        r"(?i)(authorization\\s*[:=]\\s*key\\s+)[^\\s,;]+",
+        r"\\1[REDACTED]",
+        message,
+    )
+    message = re.sub(
+        r"(?i)(hf_(?:key|api_key|api_secret)\\s*[:=]\\s*)[^\\s,;]+",
+        r"\\1[REDACTED]",
+        message,
+    )
+    message = re.sub(
+        r"(?<![\\w-])[A-Za-z0-9._-]{8,}:[A-Za-z0-9._-]{8,}(?![\\w-])",
+        "[REDACTED_CREDENTIAL]",
+        message,
+    )
+    return message[:1000]
 
 
 def _extract_video_url(result: Mapping[str, Any]) -> str:
@@ -88,10 +110,10 @@ def main() -> int:
             ".env.local and rerun; do not paste the secret into chat."
         )
         return 2
-    except higgsfield_client.HiggsfieldClientError:
+    except higgsfield_client.HiggsfieldClientError as exc:
         print(
-            "Higgsfield API request failed. Check the local credential, prepaid "
-            "API balance, and request access; no successful generation is claimed."
+            "Higgsfield API request failed; no successful generation is claimed. "
+            f"Provider message: {_safe_provider_error(exc)}"
         )
         return 1
 
