@@ -1068,7 +1068,10 @@ def publish_due_jobs(
                         str(platform_state["provider_id"])
                     )
                     platform_state.update(result)
-                    platform_state["checked_at"] = _utc_now().isoformat()
+                    checked_at = _utc_now().isoformat()
+                    platform_state["checked_at"] = checked_at
+                    if platform_state.get("status") == "PUBLISHED":
+                        platform_state["completed_at"] = checked_at
                 except PublishError as exc:
                     platform_state["status"] = "FAILED"
                     platform_state["error"] = str(exc)[:1000]
@@ -1090,7 +1093,11 @@ def publish_due_jobs(
                 publisher = publisher_factory(platform)
                 result = publisher.publish(manifest, config)
                 platform_state.update(result)
-                platform_state["completed_at"] = _utc_now().isoformat()
+                mutation_at = _utc_now().isoformat()
+                if platform_state.get("status") == "SUBMITTED":
+                    platform_state["submitted_at"] = mutation_at
+                elif platform_state.get("status") in {"PUBLISHED", "NATIVE_SCHEDULED"}:
+                    platform_state["completed_at"] = mutation_at
             except PublishBlocked as exc:
                 platform_state["status"] = "BLOCKED"
                 platform_state["error"] = str(exc)[:1000]
