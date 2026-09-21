@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1.0",
+  "revision_id": "RBL-LAUNCH-R2",
+  "title": "RBL Content Engine — Improved Scene Revision",
+  "source_launch_id": "RBL-LAUNCH-001",
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "aspect_ratio": "9:16",
+  "resolution": "720p",
+  "output_format": "mp4",
+  "generate_audio": false,
+  "target_duration_seconds": 20,
+  "project_budget_usd": "20.00",
+  "publication_policy": "PENDING_HUMAN_REVIEW_BEFORE_ANY_PUBLICATION",
+  "creative_direction": {
+    "palette": "black, charcoal, warm metallic gold; subtle teal only for verification confirmation",
+    "style": "premium cinematic editorial motion design; dark glass, polished metal, restrained particles, realistic reflections",
+    "continuity": "same luxury black-and-gold visual language and camera discipline across all five scenes",
+    "text_policy": "no readable generated text, letters, logos, social-media UI, or watermarks; deterministic RBL branding is added later"
+  },
+  "shots": [
+    {
+      "shot_id": "S01",
+      "duration_seconds": 4,
+      "estimated_cost_usd": "3.00",
+      "purpose": "Signal over noise — evidence emerges from chaos",
+      "prompt": "Cinematic vertical 9:16 luxury brand-film motion design in a dark charcoal environment with warm metallic gold light. Scattered torn generic content fragments and dim floating rectangular cards move chaotically in depth. Over four seconds, elegant gold light trails pull the fragments inward and reorganize them into one refined central evidence card hovering above a glossy dark pedestal. The final card is stable, precise, luminous, and clearly more trustworthy than the surrounding debris. Restrained camera push-in, realistic reflections, controlled particles, coherent object continuity, premium editorial composition. No people, no faces, no readable text, no letters, no logos, no social-media interface, no watermark."
+    },
+    {
+      "shot_id": "S02",
+      "duration_seconds": 4,
+      "estimated_cost_usd": "3.00",
+      "purpose": "Proof gate — unsupported material is rejected",
+      "prompt": "Cinematic vertical 9:16 luxury brand-film motion design in black and charcoal with warm metallic gold and a subtle teal confirmation glow. One refined content card travels forward along a polished dark track toward an elegant transparent verification gate. Weak duplicate fragments split away, dim, and dissolve before reaching the gate. The central card passes through cleanly, receives a restrained gold-and-teal confirmation pulse, then continues forward alone. The visual meaning must be unmistakable: unsupported material is rejected and one verified idea moves on. Slow controlled camera dolly, premium glass and metal, cinematic lighting, crisp reflections. No people, no faces, no readable text, no letters, no logos, no app interface, no watermark."
+    },
+    {
+      "shot_id": "S03",
+      "duration_seconds": 4,
+      "estimated_cost_usd": "3.00",
+      "purpose": "Platform cuts — one verified idea becomes three treatments",
+      "prompt": "Cinematic vertical 9:16 luxury brand-film motion design in black and charcoal with warm metallic gold light. Start with one glowing central verified content card above a dark pedestal. Three clean golden branches grow outward from that same source and form three distinct floating visual panels: the left panel is bold and immediate with one dramatic hero image, the center panel is structured and explanatory with modular image-and-layout blocks, and the right panel is minimal and proof-oriented with a clean visual data motif. All three panels must visibly share the same source identity and originate from the one central card. Smooth elegant branching motion, strong spatial hierarchy, premium editorial lighting, restrained camera rise. No people, no faces, no readable text, no letters, no social-media logos, no brand marks, no watermark."
+    },
+    {
+      "shot_id": "S04",
+      "duration_seconds": 4,
+      "estimated_cost_usd": "3.00",
+      "purpose": "Controlled production — references, continuity, budget, review",
+      "prompt": "Cinematic vertical 9:16 luxury brand-film motion design in black and charcoal with warm metallic gold light. A refined central content card hovers over a dark circular platform while four distinct control modules lock into orbit around it: a layered reference tile, a continuity chain motif, a measured budget dial, and a human-review approval symbol. Golden light paths connect every module back to the central card. The modules settle into a stable balanced system, showing that creative generation is constrained by references, continuity, cost, and review. Premium dark glass, gold rim light, crisp reflections, slow controlled camera orbit, coherent geometry. No people, no faces, no readable text, no letters, no logos, no watermark."
+    },
+    {
+      "shot_id": "S05",
+      "duration_seconds": 4,
+      "estimated_cost_usd": "3.00",
+      "purpose": "Launch gate — proof converges into a final brand-ready moment",
+      "prompt": "Cinematic vertical 9:16 premium closing shot in a dark black luxury environment with a polished reflective floor. Fine warm-gold light trails flow inward from both sides and converge into a clean glowing circular emblem frame suspended above a subtle dark pedestal. Keep the center of the circle visually clean and uncluttered so an RBL logo can be overlaid later in post-production. Tiny gold particles and a few elegant leaf-like light shapes drift slowly while the camera settles with confident restraint. The final frame should feel complete, premium, anticipatory, and publication-ready. No people, no faces, no readable text, no letters, no generated logos, no watermark."
+    }
+  ]
+}
