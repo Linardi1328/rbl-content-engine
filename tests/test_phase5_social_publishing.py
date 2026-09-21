@@ -344,6 +344,64 @@ class TikTokPublisherTests(unittest.TestCase):
             )
             self.assertEqual(transport.calls[2]["method"], "PUT")
 
+    def test_tiktok_submission_uses_submitted_at_until_reconciliation_completes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = make_manifest(root, "2026-01-01T00:00:00+00:00")
+            manifest["platforms"] = {
+                "tiktok": manifest["platforms"]["tiktok"]
+            }
+            path = root / "manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+            queue = ScheduleQueue(root / "queue.json")
+            queue.add_manifest(path)
+
+            class SubmittedThenPublished:
+                def publish(
+                    self,
+                    manifest: Mapping[str, Any],
+                    config: Mapping[str, Any],
+                ) -> dict[str, Any]:
+                    return {
+                        "status": "SUBMITTED",
+                        "provider_id": "tt-pub-1",
+                    }
+
+                def check_status(self, publish_id: str) -> dict[str, Any]:
+                    self_publish_id = publish_id
+                    if self_publish_id != "tt-pub-1":
+                        raise AssertionError("unexpected publish id")
+                    return {
+                        "status": "PUBLISHED",
+                        "provider_id": publish_id,
+                        "public_post_ids": [],
+                    }
+
+            publisher = SubmittedThenPublished()
+            factory = lambda platform: publisher
+
+            publish_due_jobs(
+                queue,
+                now=datetime(2026, 10, 2, tzinfo=timezone.utc),
+                receipt_dir=root / "receipts",
+                publisher_factory=factory,
+            )
+            first = queue.jobs[0].platforms["tiktok"]
+            self.assertEqual(first["status"], "SUBMITTED")
+            self.assertIn("submitted_at", first)
+            self.assertNotIn("completed_at", first)
+
+            publish_due_jobs(
+                queue,
+                now=datetime(2026, 10, 2, tzinfo=timezone.utc),
+                receipt_dir=root / "receipts",
+                publisher_factory=factory,
+            )
+            final = queue.jobs[0].platforms["tiktok"]
+            self.assertEqual(final["status"], "PUBLISHED")
+            self.assertIn("completed_at", final)
+            self.assertEqual(queue.jobs[0].status, "COMPLETE")
+
     def test_missing_music_confirmation_blocks_before_network(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             manifest = make_manifest(Path(directory))
