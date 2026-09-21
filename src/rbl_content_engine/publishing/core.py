@@ -296,7 +296,7 @@ class InstagramReelsPublisher:
         max_polls: int = 40,
     ) -> None:
         if not graph_version.startswith("v"):
-            raise PublishBlocked("META_GRAPH_VERSION must look like vNN.N")
+            raise PublishBlocked("INSTAGRAM_GRAPH_VERSION must look like vNN.N")
         self.graph_version = graph_version
         self.ig_user_id = ig_user_id
         self.access_token = access_token
