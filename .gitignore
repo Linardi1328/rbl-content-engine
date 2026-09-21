@@ -35,3 +35,9 @@ examples/*/output/
 .production/higgsfield-api-provider.json
 .production/rbl-launch-video.json
 .production/launch-video-outputs/
+
+# Phase 5 direct social publishing runtime state.
+.production/social-publishing-queue.json
+.production/publication-receipts/
+.production/social-auth/
+.production/final-exports/

@@ -4,7 +4,7 @@ Evidence-driven manual content pipeline for RBL Productions.
 
 ## Repository scope and current milestone
 
-Phase 0 remains the evidence-to-content foundation. Phase 2A/2B add the accepted offline revenue/audience learning loop. The active production milestone is **Phase 4C — First Launch Video Generation**, using the live-verified official Higgsfield Seedance 2.5 API while preserving the existing budget, QC, and human-review gates.
+Phase 0 remains the evidence-to-content foundation. Phase 2A/2B add the accepted offline revenue/audience learning loop. The active production milestone is **Phase 5 — Direct Social Publishing**, adding an RBL-owned scheduler and direct Instagram/TikTok/YouTube publishing adapters after the approved production workflow. Phase 0–4 remain historically scoped to their original human-review/publication boundaries.
 
 Phase 0 turns verified project/GitHub evidence into platform-native content drafts while keeping factual evidence and market strategy separate:
 
@@ -389,6 +389,62 @@ This requires local `ffmpeg` and `ffprobe`. The expected review file is:
 Successful assembly sets live state to `PENDING_HUMAN_REVIEW`; it does not authorize or perform social publication.
 
 Authority: `docs/production/PHASE_4C_LAUNCH_VIDEO.md`.
+
+
+## Phase 5 — direct social publishing
+
+Phase 5 adds a local persistent schedule queue and direct official platform adapters:
+
+```text
+final platform exports
+-> validated Phase 5 post manifest
+-> timezone-aware local schedule queue
+-> Instagram / TikTok / YouTube API
+-> per-platform publication receipt
+```
+
+Supported targets:
+
+- Instagram Reels;
+- TikTok Direct Post;
+- YouTube vertical video / Shorts-compatible uploads.
+
+The implementation lives under `src/rbl_content_engine/publishing/` and uses only the Python standard library.
+
+Example manifest:
+
+`examples/production/social-post-manifest.example.json`
+
+Validate locally without any network call:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing preflight \
+  examples/production/social-post-manifest.example.json
+```
+
+Schedule a real post manifest:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing schedule .production/my-post.json
+```
+
+Run the due queue once:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing tick
+```
+
+Or run continuously:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing daemon --poll-seconds 30
+```
+
+Live queue state, OAuth refresh state, final exports, and publication receipts remain under ignored `.production/` paths.
+
+Provider developer-console/OAuth setup is still a one-time external prerequisite. Instagram uses Instagram Login with `instagram_business_basic` + `instagram_business_content_publish` and a publicly reachable HTTPS `video_url`. TikTok additionally requires current Creator Info, explicit per-post consent, editable metadata before consent, Music Usage Confirmation, and a clean API export without application-added promotional logo/watermark/branding.
+
+Authority: `docs/production/PHASE_5_DIRECT_SOCIAL_PUBLISHING.md`.
 
 ## Later learning loop
 
