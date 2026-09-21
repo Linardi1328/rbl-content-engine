@@ -9,6 +9,7 @@ from pathlib import Path
 from .core import (
     DEFAULT_QUEUE,
     ScheduleQueue,
+    TikTokPublisher,
     load_post_manifest,
     publish_due_jobs,
     run_scheduler,
@@ -92,6 +93,14 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=300.0,
         help="Local callback listener timeout",
+    )
+
+    sub.add_parser(
+        "tiktok-creator-info",
+        help=(
+            "Refresh TikTok auth if needed and query the connected creator's "
+            "current Direct Post capabilities"
+        ),
     )
 
     return parser
@@ -213,6 +222,26 @@ def main() -> int:
             timeout_seconds=args.timeout_seconds,
         )
         print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "tiktok-creator-info":
+        creator = TikTokPublisher.from_env().creator_info()
+        safe_fields = (
+            "creator_username",
+            "creator_nickname",
+            "privacy_level_options",
+            "comment_disabled",
+            "duet_disabled",
+            "stitch_disabled",
+            "max_video_post_duration_sec",
+        )
+        print(
+            json.dumps(
+                {key: creator.get(key) for key in safe_fields},
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return 0
 
     return 2
