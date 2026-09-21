@@ -13,6 +13,7 @@ from .core import (
     publish_due_jobs,
     run_scheduler,
 )
+from .tiktok_auth import DEFAULT_REDIRECT_URI, run_desktop_oauth
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,6 +61,38 @@ def build_parser() -> argparse.ArgumentParser:
     retry.add_argument("post_id")
     retry.add_argument("platform")
     retry.add_argument("--queue", type=Path, default=DEFAULT_QUEUE)
+
+    tiktok_auth = sub.add_parser(
+        "tiktok-auth",
+        help="Authorize TikTok Desktop Login Kit with PKCE and store refresh-token state",
+    )
+    tiktok_auth.add_argument(
+        "--redirect-uri",
+        default=DEFAULT_REDIRECT_URI,
+        help=f"Registered TikTok Desktop redirect URI (default: {DEFAULT_REDIRECT_URI})",
+    )
+    tiktok_auth.add_argument(
+        "--scopes",
+        default="user.info.basic,video.publish",
+        help="Comma-separated TikTok scopes",
+    )
+    tiktok_auth.add_argument(
+        "--state-path",
+        type=Path,
+        default=None,
+        help="Optional token-state path override",
+    )
+    tiktok_auth.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Print the authorization URL without opening the system browser",
+    )
+    tiktok_auth.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=300.0,
+        help="Local callback listener timeout",
+    )
 
     return parser
 
@@ -168,6 +201,18 @@ def main() -> int:
             raise SystemExit(f"post not found: {args.post_id}")
         queue.save()
         print(f"{args.post_id}:{args.platform}:SCHEDULED")
+        return 0
+
+    if args.command == "tiktok-auth":
+        scopes = tuple(scope.strip() for scope in args.scopes.split(",") if scope.strip())
+        result = run_desktop_oauth(
+            redirect_uri=args.redirect_uri,
+            scopes=scopes,
+            state_path=args.state_path,
+            open_browser=not args.no_browser,
+            timeout_seconds=args.timeout_seconds,
+        )
+        print(json.dumps(result, indent=2, sort_keys=True))
         return 0
 
     return 2
