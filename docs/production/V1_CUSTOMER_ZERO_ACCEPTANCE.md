@@ -47,10 +47,15 @@ The run passes only when all of the following are true:
    `PENDING_HUMAN_REVIEW`.
 7. The Phase 5 post manifest matches the same job ID and its exact enabled platform
    assets still match the human-approved SHA-256 fingerprints/public URLs.
-8. Every platform enabled for the acceptance post completes as `PUBLISHED` or
-   `NATIVE_SCHEDULED` with no recorded error.
-9. At least one enabled platform reaches an actual `PUBLISHED` state. A post that is
-   only queued or native-scheduled is not enough.
+8. Every enabled publication platform is present in both the upstream content targets
+   and the media-plan targets.
+9. The publication receipt records `asset_ai_generated: true` for the Higgsfield
+   Customer Zero item.
+10. Every platform enabled for the acceptance post completes as `PUBLISHED` or
+    `NATIVE_SCHEDULED`, includes a provider ID and completion timestamp, and has no
+    recorded error.
+11. At least one enabled platform reaches an actual `PUBLISHED` state. A post that is
+    only queued or native-scheduled is not enough.
 
 ## First acceptance platform
 
