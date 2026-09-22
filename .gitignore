@@ -45,3 +45,7 @@ examples/*/output/
 
 # V1 job-scoped weekly production state and generated media.
 .production/jobs/
+
+
+# Real Customer Zero acceptance inputs and operator state.
+.production/customer-zero/
