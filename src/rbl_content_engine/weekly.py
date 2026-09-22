@@ -171,11 +171,19 @@ def _validate_brief(brief: Mapping[str, Any]) -> None:
     targets = brief.get("targets")
     if not isinstance(targets, list) or not targets:
         raise ValueError("brief.targets must contain at least one platform")
+    for target in targets:
+        if not isinstance(target, str) or target not in SUPPORTED_TARGETS:
+            raise ValueError(f"unsupported short-form target: {target}")
     if len(set(targets)) != len(targets):
         raise ValueError("brief.targets must not contain duplicates")
-    for target in targets:
-        if target not in SUPPORTED_TARGETS:
-            raise ValueError(f"unsupported short-form target: {target}")
+
+    hook_claim_ids = brief.get("hook_claim_ids")
+    if not isinstance(hook_claim_ids, list):
+        raise ValueError("brief.hook_claim_ids must be a list")
+    if any(not isinstance(claim_id, str) or not claim_id for claim_id in hook_claim_ids):
+        raise ValueError("brief.hook_claim_ids must contain non-empty claim IDs")
+    if len(set(hook_claim_ids)) != len(hook_claim_ids):
+        raise ValueError("brief.hook_claim_ids must not contain duplicates")
 
 
 def _validate_theme(theme: Mapping[str, Any]) -> int:
@@ -389,17 +397,31 @@ def run_weekly_pipeline(
 
     claims = tuple(item.claim for item in verifications)
     require_verified_claims(claims)
+    by_id = {item.claim.claim_id: item for item in verifications}
+
+    hook_claim_ids = list(brief["hook_claim_ids"])
+    unknown_hook_claims = [
+        claim_id for claim_id in hook_claim_ids if claim_id not in by_id
+    ]
+    if unknown_hook_claims:
+        raise ValueError(
+            "brief.hook_claim_ids contains unknown claim IDs: "
+            + ", ".join(unknown_hook_claims)
+        )
+
+    remaining_claims = tuple(
+        claim for claim in claims if claim.claim_id not in hook_claim_ids
+    )
     required_claim_beats = sum(
         1 for beat in theme["beats"] if beat["source"] == "next_claim"
     )
-    if required_claim_beats > len(claims):
+    if required_claim_beats > len(remaining_claims):
         raise ValueError(
             "theme requires more next_claim beats than verified claims available"
         )
-    by_id = {item.claim.claim_id: item for item in verifications}
 
-    claim_iter = iter(claims)
-    used_claim_ids: list[str] = []
+    claim_iter = iter(remaining_claims)
+    used_claim_ids: list[str] = list(hook_claim_ids)
     script_beats: list[dict[str, Any]] = []
 
     for beat_index, raw_beat in enumerate(theme["beats"], start=1):
@@ -409,6 +431,9 @@ def run_weekly_pipeline(
 
         if source == "brief_hook":
             text = brief["hook"]
+            source_claim_ids.extend(hook_claim_ids)
+            for claim_id in hook_claim_ids:
+                evidence.extend(by_id[claim_id].evidence)
         elif source == "theme_text":
             text = raw_beat["text"]
         else:
