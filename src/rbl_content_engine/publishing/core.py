@@ -254,6 +254,9 @@ def require_publication_approval(manifest: Mapping[str, Any]) -> None:
     approved_hashes = approval.get("asset_sha256")
     if not isinstance(approved_hashes, Mapping):
         raise PublishBlocked("approval.asset_sha256 is required")
+    approved_urls = approval.get("asset_public_urls", {})
+    if not isinstance(approved_urls, Mapping):
+        raise PublishBlocked("approval.asset_public_urls must be an object when present")
 
     for platform in _enabled_platforms(manifest):
         expected = approved_hashes.get(platform)
@@ -269,6 +272,13 @@ def require_publication_approval(manifest: Mapping[str, Any]) -> None:
         if actual.lower() != expected.lower():
             raise PublishBlocked(
                 f"{platform} asset changed after human approval; publication is blocked"
+            )
+
+        current_url = _asset_entry(manifest, platform).get("public_url")
+        if current_url is not None and approved_urls.get(platform) != current_url:
+            raise PublishBlocked(
+                f"{platform} public asset URL changed after human approval; "
+                "publication is blocked"
             )
 
 
@@ -362,13 +372,20 @@ def approve_post_manifest(
     if approved_at.tzinfo is None or approved_at.utcoffset() is None:
         raise ValueError("approval time must be timezone-aware")
 
+    enabled_platforms = _enabled_platforms(payload)
+    public_urls = {
+        platform: str(_asset_entry(payload, platform)["public_url"])
+        for platform in enabled_platforms
+        if _asset_entry(payload, platform).get("public_url") is not None
+    }
     payload["approval"] = {
         "human_confirmed": True,
         "confirmed_at": approved_at.isoformat(),
         "asset_sha256": {
             platform: _sha256_file(_asset_path(payload, platform))
-            for platform in _enabled_platforms(payload)
+            for platform in enabled_platforms
         },
+        "asset_public_urls": public_urls,
     }
     validate_post_manifest(payload)
 
