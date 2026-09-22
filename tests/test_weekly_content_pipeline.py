@@ -272,8 +272,9 @@ class WeeklyContentPipelineTests(unittest.TestCase):
             root = Path(directory)
             brief, claims, theme_path = build_workspace(root)
             theme = json.loads(theme_path.read_text(encoding="utf-8"))
-            theme["beats"][0]["duration_seconds"] = 11
-            theme["target_duration_seconds"] = 31
+            theme["beats"][0]["duration_seconds"] = 8
+            theme["beats"][1]["duration_seconds"] = 8
+            theme["target_duration_seconds"] = 32
             write_json(theme_path, theme)
 
             with self.assertRaisesRegex(ValueError, "between 20 and 30"):
@@ -367,7 +368,7 @@ class WeeklyContentPipelineTests(unittest.TestCase):
                 output_dir=output,
             )
             self.assertEqual(result["status"], "READY_FOR_HUMAN_REVIEW")
-            self.assertEqual(result["planned_duration_seconds"], 22)
+            self.assertEqual(result["planned_duration_seconds"], 24)
             self.assertEqual(
                 result["used_claim_ids"],
                 ["claim-001", "claim-002", "claim-003", "claim-004"],
