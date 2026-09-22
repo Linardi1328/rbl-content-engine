@@ -127,6 +127,9 @@ def make_manifest(tmp: Path, scheduled_at: str = "2026-10-02T19:30:00+08:00") ->
             "tiktok": hashlib.sha256(tiktok.read_bytes()).hexdigest(),
             "youtube": hashlib.sha256(youtube.read_bytes()).hexdigest(),
         },
+        "asset_public_urls": {
+            "instagram": "https://media.example.test/rbl-test.mp4",
+        },
     }
     return manifest
 
@@ -156,6 +159,22 @@ class PublishingManifestTests(unittest.TestCase):
             with self.assertRaisesRegex(PublishBlocked, "changed after human approval"):
                 validate_post_manifest(manifest)
 
+    def test_manifest_blocks_instagram_public_url_changed_after_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            manifest["assets"]["instagram"]["public_url"] = (
+                "https://media.example.test/different.mp4"
+            )
+            with self.assertRaisesRegex(PublishBlocked, "public asset URL changed"):
+                validate_post_manifest(manifest)
+
+    def test_manifest_requires_timezone_aware_approval_time(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            manifest["approval"]["confirmed_at"] = "2026-10-02T18:15:00"
+            with self.assertRaisesRegex(PublishBlocked, "confirmed_at"):
+                validate_post_manifest(manifest)
+
     def test_approve_post_manifest_hashes_current_enabled_assets(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -174,6 +193,10 @@ class PublishingManifestTests(unittest.TestCase):
             self.assertEqual(
                 set(approved["approval"]["asset_sha256"]),
                 {"instagram", "tiktok", "youtube"},
+            )
+            self.assertEqual(
+                approved["approval"]["asset_public_urls"],
+                {"instagram": "https://media.example.test/rbl-test.mp4"},
             )
             validate_post_manifest(json.loads(path.read_text(encoding="utf-8")))
 
