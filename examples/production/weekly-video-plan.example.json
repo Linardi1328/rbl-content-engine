@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "RBL-SAMPLE-WEEKLY-001",
+  "title": "Synthetic Lost Wallet Story — Media Plan",
+  "platform_targets": [
+    "instagram",
+    "tiktok",
+    "youtube_shorts"
+  ],
+  "aspect_ratio": "9:16",
+  "target_duration_seconds": 24,
+  "project_budget_usd": "20.00",
+  "publication_policy": "PENDING_HUMAN_REVIEW_BEFORE_ANY_PUBLICATION",
+  "shots": [
+    {
+      "shot_id": "S01",
+      "purpose": "Hook",
+      "duration_seconds": 4,
+      "application": "bytedance/seedance-2.5/text-to-video",
+      "estimated_cost_usd": "3.00",
+      "prompt": "Vertical 9:16 grounded cinematic realism. Open on an unresolved everyday commuter moment that creates curiosity without adding story facts. Restrained camera movement, natural lighting, no readable text, no logos, no watermark."
+    },
+    {
+      "shot_id": "S02",
+      "purpose": "Setup",
+      "duration_seconds": 4,
+      "application": "bytedance/seedance-2.5/text-to-video",
+      "estimated_cost_usd": "3.00",
+      "prompt": "Vertical 9:16 grounded cinematic realism. A commuter notices a wallet on an empty train seat. Show only this supported action and setting. Natural lighting, clear composition, no readable text, no logos, no watermark."
+    },
+    {
+      "shot_id": "S03",
+      "purpose": "Stakes",
+      "duration_seconds": 4,
+      "application": "bytedance/seedance-2.5/text-to-video",
+      "estimated_cost_usd": "3.00",
+      "prompt": "Vertical 9:16 grounded cinematic realism. The wallet contains an identification card and cash. Keep details generic and non-readable, with no invented names or amounts. No logos, no watermark."
+    },
+    {
+      "shot_id": "S04",
+      "purpose": "Choice",
+      "duration_seconds": 4,
+      "application": "bytedance/seedance-2.5/text-to-video",
+      "estimated_cost_usd": "3.00",
+      "prompt": "Vertical 9:16 grounded cinematic realism. The commuter hands the wallet to station staff instead of keeping it. Show the action clearly without invented dialogue or extra characters. No readable text, no logos, no watermark."
+    },
+    {
+      "shot_id": "S05",
+      "purpose": "Payoff",
+      "duration_seconds": 4,
+      "application": "bytedance/seedance-2.5/text-to-video",
+      "estimated_cost_usd": "3.00",
+      "prompt": "Vertical 9:16 grounded cinematic realism. The owner later retrieves the wallet from the station lost-and-found. Show only the supported resolution without invented reactions, names, or dialogue. No readable text, no logos, no watermark."
+    },
+    {
+      "shot_id": "S06",
+      "purpose": "Close",
+      "duration_seconds": 4,
+      "application": "bytedance/seedance-2.5/text-to-video",
+      "estimated_cost_usd": "3.00",
+      "prompt": "Vertical 9:16 grounded cinematic realism. End on a simple reflective everyday image with clean negative space for deterministic local text overlay. No readable generated text, no logos, no watermark."
+    }
+  ],
+  "model": "bytedance/seedance-2.5/text-to-video",
+  "resolution": "720p",
+  "output_format": "mp4",
+  "generate_audio": false
+}
