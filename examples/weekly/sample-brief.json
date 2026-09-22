@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "RBL-SAMPLE-WEEKLY-001",
+  "project": "Synthetic Lost Wallet Story",
+  "topic": "what someone does when nobody is watching",
+  "objective": "Create one concise character-driven short that can be reviewed before media generation.",
+  "hook": "What do you do when nobody is watching?",
+  "targets": [
+    "youtube",
+    "instagram",
+    "tiktok"
+  ],
+  "approval_status": "PENDING_HUMAN"
+}
