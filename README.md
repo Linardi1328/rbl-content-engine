@@ -121,7 +121,7 @@ The drafts should be meaningfully platform-native, not identical copy with diffe
 The minimum Customer Zero content-package path is:
 
 ```text
-brief/topic
+brief/topic + hook lineage
 + local evidence-backed claims
 + Esther-approved channel theme
 -> verified 20-30s script
