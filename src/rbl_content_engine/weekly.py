@@ -412,15 +412,19 @@ def run_weekly_pipeline(
     remaining_claims = tuple(
         claim for claim in claims if claim.claim_id not in hook_claim_ids
     )
+    reusable_hook_claims = tuple(
+        claim for claim in claims if claim.claim_id in hook_claim_ids
+    )
+    claim_sequence = remaining_claims + reusable_hook_claims
     required_claim_beats = sum(
         1 for beat in theme["beats"] if beat["source"] == "next_claim"
     )
-    if required_claim_beats > len(remaining_claims):
+    if required_claim_beats > len(claim_sequence):
         raise ValueError(
             "theme requires more next_claim beats than verified claims available"
         )
 
-    claim_iter = iter(remaining_claims)
+    claim_iter = iter(claim_sequence)
     used_claim_ids: list[str] = list(hook_claim_ids)
     script_beats: list[dict[str, Any]] = []
 
@@ -445,7 +449,8 @@ def run_weekly_pipeline(
                 ) from exc
             text = claim.text
             source_claim_ids.append(claim.claim_id)
-            used_claim_ids.append(claim.claim_id)
+            if claim.claim_id not in used_claim_ids:
+                used_claim_ids.append(claim.claim_id)
             evidence.extend(by_id[claim.claim_id].evidence)
 
         script_beats.append(
