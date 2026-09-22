@@ -19,7 +19,9 @@ weekly brief/topic
 
 The channel theme is human creative direction. It may define recurring structure,
 voice, visual style, generic connective lines, and the number/duration of story beats.
-It is never evidence for a factual claim.
+It is never evidence for a factual claim. A weekly hook that contains factual content
+must declare the supporting verified claim IDs; an empty `hook_claim_ids` list means
+the operator is treating the hook as generic/non-factual creative language.
 
 ## Inputs
 
@@ -32,6 +34,7 @@ Required fields:
 - `topic`
 - `objective`
 - `hook`
+- `hook_claim_ids`: verified claim IDs used by a factual hook, or an empty list for a generic/non-factual hook
 - `targets` using only `youtube`, `instagram`, and/or `tiktok`
 - `approval_status` fixed to `PENDING_HUMAN`
 
