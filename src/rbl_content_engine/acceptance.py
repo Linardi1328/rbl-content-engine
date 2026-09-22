@@ -170,7 +170,7 @@ def evaluate_customer_zero(
     media_plan_error: str | None = None
     try:
         validate_video_plan(media_plan)
-    except (ValueError, TypeError) as exc:
+    except (ValueError, TypeError, ArithmeticError) as exc:
         media_plan_error = str(exc)
 
     media_identity_ok = False
@@ -267,6 +267,12 @@ def evaluate_customer_zero(
         except ValueError as exc:
             actual_path = None
             final_video_detail = str(exc)
+        try:
+            width = int(final_video.get("width", 0))
+            height = int(final_video.get("height", 0))
+        except (TypeError, ValueError):
+            width = 0
+            height = 0
         duration = final_video.get("duration_seconds")
         expected = (
             float(media_plan.get("target_duration_seconds"))
@@ -277,8 +283,8 @@ def evaluate_customer_zero(
             actual_path is not None
             and actual_path.is_file()
             and final_video.get("technical_qc") == "PASS"
-            and int(final_video.get("width", 0)) == 720
-            and int(final_video.get("height", 0)) == 1280
+            and width == 720
+            and height == 1280
             and isinstance(duration, (int, float))
             and not isinstance(duration, bool)
             and expected is not None
@@ -293,10 +299,7 @@ def evaluate_customer_zero(
             final_video_detail = f"final review cut file is missing: {actual_path}"
         elif final_video.get("technical_qc") != "PASS":
             final_video_detail = "final review cut technical_qc must be PASS"
-        elif (
-            int(final_video.get("width", 0)),
-            int(final_video.get("height", 0)),
-        ) != (720, 1280):
+        elif (width, height) != (720, 1280):
             final_video_detail = "final review cut must be 720x1280"
         elif expected is not None and isinstance(duration, (int, float)):
             final_video_detail = (
@@ -360,6 +363,25 @@ def evaluate_customer_zero(
         "publication receipt must be COMPLETE and match post_id/scheduled_at",
     )
 
+    content_targets = content.get("targets")
+    media_targets = media_plan.get("platform_targets")
+    normalized_media_targets = {
+        "youtube" if target == "youtube_shorts" else str(target)
+        for target in media_targets
+    } if isinstance(media_targets, list) else set()
+    target_lineage_ok = (
+        isinstance(content_targets, list)
+        and all(platform in content_targets for platform in enabled_platforms)
+        and all(platform in normalized_media_targets for platform in enabled_platforms)
+    )
+    _record(
+        checks,
+        "publication_target_lineage",
+        target_lineage_ok,
+        "enabled publication platforms are present in both content and media targets",
+        "every enabled publication platform must trace to both content.targets and media_plan.platform_targets",
+    )
+
     platform_states_ok = False
     at_least_one_published = False
     if receipt_base_ok and isinstance(receipt_platforms, Mapping):
@@ -367,6 +389,10 @@ def evaluate_customer_zero(
             isinstance(receipt_platforms.get(platform), Mapping)
             and receipt_platforms[platform].get("status")
             in {"PUBLISHED", "NATIVE_SCHEDULED"}
+            and isinstance(receipt_platforms[platform].get("provider_id"), str)
+            and bool(receipt_platforms[platform].get("provider_id"))
+            and isinstance(receipt_platforms[platform].get("completed_at"), str)
+            and bool(receipt_platforms[platform].get("completed_at"))
             and not receipt_platforms[platform].get("error")
             for platform in enabled_platforms
         )
@@ -376,12 +402,20 @@ def evaluate_customer_zero(
             for platform in enabled_platforms
         )
 
+    receipt_ai_ok = receipt.get("asset_ai_generated") is True
+    _record(
+        checks,
+        "receipt_ai_generation_lineage",
+        receipt_ai_ok,
+        "publication receipt records AI-generated media",
+        "Customer Zero receipt must record asset_ai_generated=true for the Higgsfield-produced item",
+    )
     _record(
         checks,
         "enabled_platforms_complete",
         platform_states_ok,
-        "every platform enabled for the acceptance post completed successfully",
-        "every enabled platform must finish as PUBLISHED or NATIVE_SCHEDULED with no error",
+        "every enabled platform has provider evidence and completed successfully",
+        "every enabled platform must finish as PUBLISHED or NATIVE_SCHEDULED with provider_id, completed_at, and no error",
     )
     _record(
         checks,
