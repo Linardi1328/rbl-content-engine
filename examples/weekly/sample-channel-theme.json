@@ -5,11 +5,11 @@
   "notes": "Synthetic example only. Replace with Esther's approved RBL channel theme before production.",
   "voice": "cinematic, concise, human, and understated",
   "visual_style": "grounded cinematic realism with clear actions, restrained camera movement, and no generated readable text",
-  "target_duration_seconds": 22,
+  "target_duration_seconds": 24,
   "beats": [
     {
       "id": "hook",
-      "duration_seconds": 3,
+      "duration_seconds": 4,
       "source": "brief_hook",
       "visual_direction": "Open on an unresolved everyday moment that creates immediate curiosity."
     },
@@ -39,7 +39,7 @@
     },
     {
       "id": "close",
-      "duration_seconds": 3,
+      "duration_seconds": 4,
       "source": "theme_text",
       "text": "Small choices reveal character.",
       "visual_direction": "End on a simple reflective image with room for deterministic text added during local assembly."
