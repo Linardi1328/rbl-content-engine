@@ -161,6 +161,33 @@ scripts are run without `--plan`.
 
 See `docs/production/V1_JOB_SCOPED_MEDIA.md`.
 
+## V1 Customer Zero acceptance
+
+The final P0 gate is one **real** RBL content item through the full weekly workflow.
+Synthetic examples cannot pass it.
+
+After the real item has produced a human-reviewed media job, exact-asset-approved
+Phase 5 manifest, and completed publication receipt, evaluate the recorded artifacts:
+
+```bash
+PYTHONPATH=src uv run --no-sync python -m rbl_content_engine.acceptance \
+  --content-package .production/customer-zero/RBL-CZ-001/weekly-output/content-package.json \
+  --storyboard .production/customer-zero/RBL-CZ-001/weekly-output/storyboard.json \
+  --media-plan .production/customer-zero/RBL-CZ-001/media-plan.json \
+  --generation-state .production/jobs/RBL-CZ-001/higgsfield-state.json \
+  --post-manifest .production/customer-zero/RBL-CZ-001/post-manifest.json \
+  --publication-receipt .production/publication-receipts/RBL-CZ-001.json \
+  --human-confirmed-real-content
+```
+
+A PASS requires every enabled platform to complete successfully and at least one to
+reach `PUBLISHED`. The evaluator itself makes no network calls and performs no paid
+mutations.
+
+The remaining human inputs are Esther's final production channel theme/storyline and
+the first real Customer Zero topic/evidence. See
+`docs/production/V1_CUSTOMER_ZERO_ACCEPTANCE.md`.
+
 ## Development
 
 Target runtime: Python 3.11+.
