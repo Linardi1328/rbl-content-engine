@@ -116,23 +116,15 @@ def validate_video_plan(plan: Mapping[str, Any]) -> None:
         raise ValueError("planned video spend exceeds project budget")
 
 
-def _rooted(path: Path) -> Path:
-    return path if path.is_absolute() else ROOT / path
-
-
 def resolve_runtime_paths(
     plan: Mapping[str, Any],
     *,
     plan_path: Path,
-    state_file: Path | None = None,
-    output_dir: Path | None = None,
 ) -> VideoRuntimePaths:
     identity_key, identity = plan_identity(plan)
     legacy = (
         identity_key == "launch_id"
         and plan_path.resolve() == LEGACY_PLAN_FILE.resolve()
-        and state_file is None
-        and output_dir is None
     )
 
     if legacy:
@@ -144,11 +136,9 @@ def resolve_runtime_paths(
         )
 
     job_dir = JOB_ROOT / identity
-    actual_state = _rooted(state_file) if state_file is not None else job_dir / "higgsfield-state.json"
-    actual_output = _rooted(output_dir) if output_dir is not None else job_dir / "generation"
     return VideoRuntimePaths(
-        state_file=actual_state,
-        output_dir=actual_output,
+        state_file=job_dir / "higgsfield-state.json",
+        output_dir=job_dir / "generation",
         final_video=job_dir / "review.mp4",
         legacy_launch=False,
     )
@@ -164,4 +154,9 @@ def state_path_string(path: Path) -> str:
 
 def resolve_recorded_path(raw: str) -> Path:
     path = Path(raw)
-    return path if path.is_absolute() else ROOT / path
+    resolved = path.resolve() if path.is_absolute() else (ROOT / path).resolve()
+    try:
+        resolved.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError("recorded media path escapes repository root") from exc
+    return resolved
