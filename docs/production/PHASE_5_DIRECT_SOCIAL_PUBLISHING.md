@@ -56,9 +56,10 @@ The manifest defines:
 - AI-generated-media flag;
 - TikTok compliance/consent receipt;
 - explicit final human approval with a timezone-aware confirmation time;
-- SHA-256 digests for every enabled platform asset.
+- SHA-256 digests for every enabled platform asset;
+- the approved external media URL where a platform publishes by URL (currently Instagram).
 
-The scheduler never invents metadata at publish time. Final RBL publication approval is separate from TikTok's platform-specific consent. The approval hashes bind the human decision to the exact bytes reviewed; replacing an approved file blocks preflight, scheduling, and publication until the new bytes are approved again.
+The scheduler never invents metadata at publish time. Final RBL publication approval is separate from TikTok's platform-specific consent. The approval hashes bind the human decision to the exact local bytes reviewed; replacing an approved file blocks preflight, scheduling, and publication until the new bytes are approved again. For URL-ingested assets, the approval also binds the exact public URL. Production staging should treat that URL as immutable after approval.
 
 The checked-in example uses all-zero placeholder hashes only to show the schema. Do not hand-edit production hashes. Record them from the actual final files with the approval command below.
 
@@ -72,7 +73,7 @@ PYTHONPATH=src python -m rbl_content_engine.publishing approve \
   --human-confirmed
 ```
 
-This command writes the approval timestamp and SHA-256 digest for each enabled platform asset into the manifest. Any later change to an approved file invalidates the approval.
+This command writes the approval timestamp and SHA-256 digest for each enabled platform asset into the manifest, plus any external media URL used by the platform. Any later change to an approved file or approved URL invalidates the approval.
 
 Validate without network calls:
 
