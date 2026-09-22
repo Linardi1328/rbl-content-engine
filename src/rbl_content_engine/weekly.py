@@ -209,8 +209,12 @@ def _validate_theme(theme: Mapping[str, Any]) -> int:
         seen.add(beat_id)
 
         duration = beat.get("duration_seconds")
-        if not isinstance(duration, int) or isinstance(duration, bool) or duration < 1:
-            raise ValueError(f"theme beat {beat_id} duration_seconds must be positive")
+        if not isinstance(duration, int) or isinstance(duration, bool):
+            raise ValueError(f"theme beat {beat_id} duration_seconds must be an integer")
+        if duration < 4 or duration > 8:
+            raise ValueError(
+                f"theme beat {beat_id} duration_seconds must stay within the 4-8 second generated-clip range"
+            )
         total += duration
 
         source = beat.get("source")
