@@ -61,11 +61,11 @@ def build_workspace(root: Path) -> tuple[Path, Path, Path]:
         "name": "Test theme",
         "voice": "concise and human",
         "visual_style": "grounded vertical cinematic",
-        "target_duration_seconds": 22,
+        "target_duration_seconds": 24,
         "beats": [
             {
                 "id": "hook",
-                "duration_seconds": 3,
+                "duration_seconds": 4,
                 "source": "brief_hook",
                 "visual_direction": "Open on a clear unresolved moment.",
             },
@@ -95,7 +95,7 @@ def build_workspace(root: Path) -> tuple[Path, Path, Path]:
             },
             {
                 "id": "close",
-                "duration_seconds": 3,
+                "duration_seconds": 4,
                 "source": "theme_text",
                 "text": "Small choices reveal character.",
                 "visual_direction": "Close on a neutral reflective image.",
@@ -128,7 +128,7 @@ class WeeklyContentPipelineTests(unittest.TestCase):
             self.assertEqual(result["status"], "READY_FOR_HUMAN_REVIEW")
             self.assertEqual(result["verification_status"], "PASS")
             self.assertEqual(result["approval_status"], "PENDING_HUMAN")
-            self.assertEqual(result["planned_duration_seconds"], 22)
+            self.assertEqual(result["planned_duration_seconds"], 24)
             self.assertEqual(
                 result["used_claim_ids"],
                 ["claim-001", "claim-002", "claim-003", "claim-004"],
@@ -272,11 +272,30 @@ class WeeklyContentPipelineTests(unittest.TestCase):
             root = Path(directory)
             brief, claims, theme_path = build_workspace(root)
             theme = json.loads(theme_path.read_text(encoding="utf-8"))
-            theme["beats"][0]["duration_seconds"] = 12
-            theme["target_duration_seconds"] = 31
+            theme["beats"][0]["duration_seconds"] = 8
+            theme["beats"][1]["duration_seconds"] = 8
+            theme["target_duration_seconds"] = 32
             write_json(theme_path, theme)
 
             with self.assertRaisesRegex(ValueError, "between 20 and 30"):
+                run_weekly_pipeline(
+                    workspace_root=root,
+                    brief_path=brief,
+                    claims_path=claims,
+                    theme_path=theme_path,
+                    output_dir=Path("output"),
+                )
+
+    def test_theme_beat_cannot_be_shorter_than_generation_clip_floor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            brief, claims, theme_path = build_workspace(root)
+            theme = json.loads(theme_path.read_text(encoding="utf-8"))
+            theme["beats"][0]["duration_seconds"] = 3
+            theme["beats"][1]["duration_seconds"] = 5
+            write_json(theme_path, theme)
+
+            with self.assertRaisesRegex(ValueError, "4-8 second"):
                 run_weekly_pipeline(
                     workspace_root=root,
                     brief_path=brief,
@@ -349,7 +368,7 @@ class WeeklyContentPipelineTests(unittest.TestCase):
                 output_dir=output,
             )
             self.assertEqual(result["status"], "READY_FOR_HUMAN_REVIEW")
-            self.assertEqual(result["planned_duration_seconds"], 22)
+            self.assertEqual(result["planned_duration_seconds"], 24)
             self.assertEqual(
                 result["used_claim_ids"],
                 ["claim-001", "claim-002", "claim-003", "claim-004"],

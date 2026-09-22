@@ -41,3 +41,7 @@ examples/*/output/
 .production/publication-receipts/
 .production/social-auth/
 .production/final-exports/
+
+
+# V1 job-scoped weekly production state and generated media.
+.production/jobs/

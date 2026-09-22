@@ -12,3 +12,9 @@ Read these documents in order for provider-neutral Stage 3 production work:
 The provider-neutral production layer is downstream of ProofLab/approved creative decisions and upstream of the existing QC/human approval boundaries.
 
 Topview-specific operational documents remain under `docs/topview/`. Higgsfield, Topview, MuAPI and future/local renderers are execution backends, not the source of RBL factual or creative authority.
+
+
+## V1 production-completion documents
+
+- `V1_WEEKLY_CONTENT_PACKAGE.md` — minimum evidence-backed 20–30s weekly script/storyboard path.
+- `V1_JOB_SCOPED_MEDIA.md` — isolated Higgsfield generation/assembly runtime per weekly `job_id`.

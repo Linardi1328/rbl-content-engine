@@ -64,7 +64,7 @@ Each beat has:
   - `theme_text`
 - `visual_direction`.
 
-The total planned duration must be 20–30 seconds.
+Each generated beat must be 4–8 seconds so the storyboard is compatible with the validated Seedance production path. The total planned duration must be 20–30 seconds.
 
 `theme_text` is human-authored creative language. It must not introduce factual
 claims that are absent from the evidence set.
@@ -121,6 +121,6 @@ This task does not implement:
 - media generation;
 - publishing.
 
-The next V1 production task is to make the already-live-verified Higgsfield
-generation/assembly path consume a weekly job/storyboard without reusing the
-launch-video-specific runtime state.
+The job-scoped Higgsfield runtime is documented in
+`docs/production/V1_JOB_SCOPED_MEDIA.md`. After that media task is accepted, the
+remaining V1 gate is one real Customer Zero item through the full weekly workflow.
