@@ -13,6 +13,7 @@ The scheduler is conservative around uncertain writes:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import mimetypes
 import os
@@ -218,7 +219,64 @@ def _platform_config(manifest: Mapping[str, Any], platform: str) -> Mapping[str,
     return config
 
 
-def validate_post_manifest(manifest: Mapping[str, Any]) -> None:
+def _enabled_platforms(manifest: Mapping[str, Any]) -> tuple[str, ...]:
+    platforms = manifest.get("platforms")
+    if not isinstance(platforms, Mapping):
+        raise PublishBlocked("manifest.platforms is required")
+    return tuple(
+        str(name)
+        for name, config in platforms.items()
+        if isinstance(config, Mapping) and config.get("enabled", True)
+    )
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def require_publication_approval(manifest: Mapping[str, Any]) -> None:
+    approval = manifest.get("approval")
+    if not isinstance(approval, Mapping):
+        raise PublishBlocked("final human publication approval is required")
+    if approval.get("human_confirmed") is not True:
+        raise PublishBlocked("approval.human_confirmed must be true")
+    try:
+        parse_datetime(str(approval.get("confirmed_at", "")))
+    except ValueError as exc:
+        raise PublishBlocked(
+            "approval.confirmed_at must be a timezone-aware ISO-8601 datetime"
+        ) from exc
+
+    approved_hashes = approval.get("asset_sha256")
+    if not isinstance(approved_hashes, Mapping):
+        raise PublishBlocked("approval.asset_sha256 is required")
+
+    for platform in _enabled_platforms(manifest):
+        expected = approved_hashes.get(platform)
+        if (
+            not isinstance(expected, str)
+            or len(expected) != 64
+            or any(ch not in "0123456789abcdefABCDEF" for ch in expected)
+        ):
+            raise PublishBlocked(
+                f"approval.asset_sha256.{platform} must be a 64-character SHA-256 hex digest"
+            )
+        actual = _sha256_file(_asset_path(manifest, platform))
+        if actual.lower() != expected.lower():
+            raise PublishBlocked(
+                f"{platform} asset changed after human approval; publication is blocked"
+            )
+
+
+def validate_post_manifest(
+    manifest: Mapping[str, Any],
+    *,
+    require_approval: bool = True,
+) -> None:
     post_id = manifest.get("post_id")
     if not isinstance(post_id, str) or not post_id.strip():
         raise ValueError("post_id must be non-empty")
@@ -274,12 +332,54 @@ def validate_post_manifest(manifest: Mapping[str, Any]) -> None:
                 "(or default public_url) with an HTTPS URL"
             )
 
+    if require_approval:
+        require_publication_approval(manifest)
+
 
 def load_post_manifest(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError("post manifest must be a JSON object")
     validate_post_manifest(payload)
+    return payload
+
+
+def approve_post_manifest(
+    path: Path,
+    *,
+    human_confirmed: bool,
+    confirmed_at: datetime | None = None,
+) -> dict[str, Any]:
+    if not human_confirmed:
+        raise PublishBlocked("explicit human confirmation is required")
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("post manifest must be a JSON object")
+
+    validate_post_manifest(payload, require_approval=False)
+    approved_at = confirmed_at or _utc_now()
+    if approved_at.tzinfo is None or approved_at.utcoffset() is None:
+        raise ValueError("approval time must be timezone-aware")
+
+    payload["approval"] = {
+        "human_confirmed": True,
+        "confirmed_at": approved_at.isoformat(),
+        "asset_sha256": {
+            platform: _sha256_file(_asset_path(payload, platform))
+            for platform in _enabled_platforms(payload)
+        },
+    }
+    validate_post_manifest(payload)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, delete=False
+    ) as handle:
+        handle.write(text)
+        temp = Path(handle.name)
+    temp.replace(path)
     return payload
 
 
