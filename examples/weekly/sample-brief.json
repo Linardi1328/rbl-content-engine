@@ -10,5 +10,6 @@
     "instagram",
     "tiktok"
   ],
-  "approval_status": "PENDING_HUMAN"
+  "approval_status": "PENDING_HUMAN",
+  "hook_claim_ids": []
 }
