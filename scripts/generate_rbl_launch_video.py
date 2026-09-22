@@ -78,7 +78,7 @@ def load_state(plan: Mapping[str, Any], path: Path = STATE_FILE) -> dict[str, An
         return state
 
     return {
-        "schema_version": "1.0.0",
+        "schema_version": "0.1.0" if identity_key == "launch_id" else "1.0.0",
         identity_key: identity,
         "model": EXPECTED_MODEL,
         "status": "GENERATING",
@@ -146,18 +146,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Tracked video plan. Defaults to the historical launch plan.",
     )
     parser.add_argument(
-        "--state-file",
-        type=Path,
-        default=None,
-        help="Optional runtime-state override; weekly jobs default under .production/jobs/<job_id>/.",
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=None,
-        help="Optional generated-media directory override.",
-    )
-    parser.add_argument(
         "--retry-shot",
         action="append",
         default=[],
@@ -185,12 +173,7 @@ def main() -> int:
         return 2
 
     plan = load_plan(args.plan)
-    runtime = resolve_runtime_paths(
-        plan,
-        plan_path=args.plan,
-        state_file=args.state_file,
-        output_dir=args.output_dir,
-    )
+    runtime = resolve_runtime_paths(plan, plan_path=args.plan)
     state = load_state(plan, runtime.state_file)
     runtime.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -341,10 +324,6 @@ def main() -> int:
             "uv run python scripts/assemble_rbl_launch_video.py",
             f"--plan {args.plan}",
         ]
-        if args.state_file is not None:
-            command_parts.append(f"--state-file {args.state_file}")
-        if args.output_dir is not None:
-            command_parts.append(f"--output-dir {args.output_dir}")
         next_command = " ".join(command_parts)
     print(
         "All video-job shots are generated. No content has been published. "
