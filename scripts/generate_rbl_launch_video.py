@@ -18,13 +18,23 @@ from typing import Any, Mapping
 
 from dotenv import load_dotenv
 
+from rbl_content_engine.production.video_job import (
+    EXPECTED_MODEL,
+    LEGACY_OUTPUT_DIR,
+    LEGACY_PLAN_FILE,
+    LEGACY_STATE_FILE,
+    ROOT,
+    plan_identity,
+    resolve_runtime_paths,
+    state_path_string,
+    validate_video_plan,
+)
 
-ROOT = Path(__file__).resolve().parents[1]
+
 ENV_FILE = ROOT / ".env.local"
-PLAN_FILE = ROOT / "examples" / "production" / "rbl-launch-video-plan.json"
-STATE_FILE = ROOT / ".production" / "rbl-launch-video.json"
-OUTPUT_DIR = ROOT / ".production" / "launch-video-outputs"
-EXPECTED_MODEL = "bytedance/seedance-2.5/text-to-video"
+PLAN_FILE = LEGACY_PLAN_FILE
+STATE_FILE = LEGACY_STATE_FILE
+OUTPUT_DIR = LEGACY_OUTPUT_DIR
 
 
 def safe_provider_error(exc: Exception) -> str:
@@ -49,60 +59,25 @@ def safe_provider_error(exc: Exception) -> str:
 
 def load_plan(path: Path = PLAN_FILE) -> dict[str, Any]:
     plan = json.loads(path.read_text(encoding="utf-8"))
-    if plan.get("model") != EXPECTED_MODEL:
-        raise ValueError("launch plan model is not the live-verified Seedance 2.5 path")
-    if plan.get("aspect_ratio") != "9:16":
-        raise ValueError("launch plan must remain vertical 9:16")
-    if plan.get("resolution") != "720p":
-        raise ValueError("launch plan must use the approved 720p draft resolution")
-    if plan.get("output_format") != "mp4":
-        raise ValueError("launch plan output format must be mp4")
-    if plan.get("generate_audio") is not False:
-        raise ValueError("launch draft must disable generated audio")
-
-    shots = plan.get("shots")
-    if not isinstance(shots, list) or not shots:
-        raise ValueError("launch plan must contain shots")
-
-    ids: set[str] = set()
-    estimated_total = Decimal("0")
-    for shot in shots:
-        if not isinstance(shot, dict):
-            raise ValueError("every launch shot must be an object")
-        shot_id = str(shot.get("shot_id", "")).strip()
-        if not shot_id or shot_id in ids:
-            raise ValueError("launch shot IDs must be unique and non-empty")
-        ids.add(shot_id)
-        if shot.get("application") != EXPECTED_MODEL:
-            raise ValueError(f"{shot_id}: application must use Seedance 2.5 text-to-video")
-        duration = int(shot.get("duration_seconds", 0))
-        if duration < 4 or duration > 8:
-            raise ValueError(f"{shot_id}: prototype duration must remain 4-8 seconds")
-        if not str(shot.get("prompt", "")).strip():
-            raise ValueError(f"{shot_id}: prompt must not be empty")
-        estimated_total += Decimal(str(shot.get("estimated_cost_usd", "0")))
-
-    project_budget = Decimal(str(plan.get("project_budget_usd", "0")))
-    if project_budget <= 0 or estimated_total > project_budget:
-        raise ValueError("planned launch spend exceeds project budget")
-    if project_budget > Decimal("20"):
-        raise ValueError("Phase 4C launch budget may not exceed US$20")
-
+    if not isinstance(plan, dict):
+        raise ValueError("video plan must be a JSON object")
+    validate_video_plan(plan)
     return plan
 
 
 def load_state(plan: Mapping[str, Any], path: Path = STATE_FILE) -> dict[str, Any]:
+    identity_key, identity = plan_identity(plan)
     if path.is_file():
         state = json.loads(path.read_text(encoding="utf-8"))
-        if state.get("launch_id") != plan.get("launch_id"):
-            raise ValueError("existing live state belongs to another launch")
+        if state.get(identity_key) != identity:
+            raise ValueError("existing live state belongs to another video job")
         if state.get("model") != EXPECTED_MODEL:
             raise ValueError("existing live state uses another model")
         return state
 
     return {
-        "schema_version": "0.1.0",
-        "launch_id": plan["launch_id"],
+        "schema_version": "1.0.0",
+        identity_key: identity,
         "model": EXPECTED_MODEL,
         "status": "GENERATING",
         "publication_status": "BLOCKED_PENDING_HUMAN_REVIEW",
@@ -160,7 +135,25 @@ def download_video(url: str, destination: Path) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate the resumable RBL Seedance 2.5 launch shots."
+        description="Generate resumable RBL Seedance 2.5 video-job shots."
+    )
+    parser.add_argument(
+        "--plan",
+        type=Path,
+        default=PLAN_FILE,
+        help="Tracked video plan. Defaults to the historical launch plan.",
+    )
+    parser.add_argument(
+        "--state-file",
+        type=Path,
+        default=None,
+        help="Optional runtime-state override; weekly jobs default under .production/jobs/<job_id>/.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Optional generated-media directory override.",
     )
     parser.add_argument(
         "--retry-shot",
@@ -189,15 +182,21 @@ def main() -> int:
         print("HF_KEY is not configured in .env.local; no request was submitted.")
         return 2
 
-    plan = load_plan()
-    state = load_state(plan)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    plan = load_plan(args.plan)
+    runtime = resolve_runtime_paths(
+        plan,
+        plan_path=args.plan,
+        state_file=args.state_file,
+        output_dir=args.output_dir,
+    )
+    state = load_state(plan, runtime.state_file)
+    runtime.output_dir.mkdir(parents=True, exist_ok=True)
 
     import higgsfield_client
 
     for shot in plan["shots"]:
         shot_id = shot["shot_id"]
-        local_path = OUTPUT_DIR / f"{shot_id}.mp4"
+        local_path = runtime.output_dir / f"{shot_id}.mp4"
         existing = state["shots"].get(shot_id)
 
         if (
@@ -247,7 +246,7 @@ def main() -> int:
                 "request_id": value,
                 "estimated_cost_usd": estimated_cost,
             }
-            write_state(state)
+            write_state(state, runtime.state_file)
             print(f"{shot_id}: enqueued as {value}.")
 
         def on_queue_update(status: Any) -> None:
@@ -282,7 +281,7 @@ def main() -> int:
                     **state["shots"].get(shot_id, {}),
                     "status": "PROVIDER_ERROR",
                 }
-                write_state(state)
+                write_state(state, runtime.state_file)
             print(
                 f"{shot_id}: provider error; no automatic retry will occur. "
                 f"Provider message: {safe_provider_error(exc)}"
@@ -294,7 +293,7 @@ def main() -> int:
                 **state["shots"].get(shot_id, {}),
                 "status": terminal_failure,
             }
-            write_state(state)
+            write_state(state, runtime.state_file)
             print(f"{shot_id}: request ended as {terminal_failure}; stopping.")
             return 1
 
@@ -310,7 +309,7 @@ def main() -> int:
                 **state["shots"].get(shot_id, {}),
                 "status": "OUTPUT_ERROR",
             }
-            write_state(state)
+            write_state(state, runtime.state_file)
             print(f"{shot_id}: output could not be validated: {exc}")
             return 1
 
@@ -318,10 +317,10 @@ def main() -> int:
             "status": "COMPLETED",
             "request_id": request_id,
             "output_url": video_url,
-            "local_path": str(local_path.relative_to(ROOT)),
+            "local_path": state_path_string(local_path),
             "estimated_cost_usd": estimated_cost,
         }
-        write_state(state)
+        write_state(state, runtime.state_file)
         print(f"{shot_id}: completed and saved to {local_path}.")
 
     state["status"] = "GENERATED"
@@ -331,11 +330,18 @@ def main() -> int:
             Decimal("0"),
         )
     )
-    write_state(state)
+    write_state(state, runtime.state_file)
 
+    if runtime.legacy_launch:
+        next_command = "uv run python scripts/assemble_rbl_launch_video.py"
+    else:
+        next_command = (
+            "uv run python scripts/assemble_rbl_launch_video.py "
+            f"--plan {args.plan}"
+        )
     print(
-        "All launch shots are generated. No content has been published. "
-        "Next: uv run python scripts/assemble_rbl_launch_video.py"
+        "All video-job shots are generated. No content has been published. "
+        f"Next: {next_command}"
     )
     return 0
 
