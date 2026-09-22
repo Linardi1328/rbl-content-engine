@@ -51,6 +51,7 @@ def build_workspace(root: Path) -> tuple[Path, Path, Path]:
         "topic": "a synthetic weekly story",
         "objective": "Build one short-form package for review.",
         "hook": "What happens when the small choice matters?",
+        "hook_claim_ids": [],
         "targets": ["youtube", "instagram", "tiktok"],
         "approval_status": "PENDING_HUMAN",
     }
@@ -210,6 +211,44 @@ class WeeklyContentPipelineTests(unittest.TestCase):
             )
             self.assertEqual(result["status"], "BLOCKED")
             self.assertIn("claim-001", result["blocked_claim_ids"])
+
+    def test_hook_claim_ids_attach_verified_lineage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            brief_path, claims, theme = build_workspace(root)
+            brief = json.loads(brief_path.read_text(encoding="utf-8"))
+            brief["hook"] = "Claim one is supported."
+            brief["hook_claim_ids"] = ["claim-001"]
+            write_json(brief_path, brief)
+
+            result = run_weekly_pipeline(
+                workspace_root=root,
+                brief_path=brief_path,
+                claims_path=claims,
+                theme_path=theme,
+                output_dir=Path("output"),
+            )
+            hook = result["script_beats"][0]
+            self.assertEqual(hook["source_claim_ids"], ["claim-001"])
+            self.assertEqual(hook["evidence"][0]["ref"], "evidence.md:L1-L1")
+            self.assertNotIn("claim-001", result["unused_claim_ids"])
+
+    def test_unknown_hook_claim_id_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            brief_path, claims, theme = build_workspace(root)
+            brief = json.loads(brief_path.read_text(encoding="utf-8"))
+            brief["hook_claim_ids"] = ["missing-claim"]
+            write_json(brief_path, brief)
+
+            with self.assertRaisesRegex(ValueError, "unknown claim IDs"):
+                run_weekly_pipeline(
+                    workspace_root=root,
+                    brief_path=brief_path,
+                    claims_path=claims,
+                    theme_path=theme,
+                    output_dir=Path("output"),
+                )
 
     def test_project_mismatch_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
