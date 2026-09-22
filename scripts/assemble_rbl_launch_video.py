@@ -1,18 +1,30 @@
-"""Assemble generated RBL launch shots into a vertical human-review cut."""
+"""Assemble generated RBL video-job shots into a vertical human-review cut."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
+from rbl_content_engine.production.video_job import (
+    LEGACY_OUTPUT_DIR,
+    LEGACY_PLAN_FILE,
+    LEGACY_STATE_FILE,
+    ROOT,
+    plan_identity,
+    resolve_recorded_path,
+    resolve_runtime_paths,
+    state_path_string,
+    validate_video_plan,
+)
 
-ROOT = Path(__file__).resolve().parents[1]
-PLAN_FILE = ROOT / "examples" / "production" / "rbl-launch-video-plan.json"
-STATE_FILE = ROOT / ".production" / "rbl-launch-video.json"
-OUTPUT_DIR = ROOT / ".production" / "launch-video-outputs"
+
+PLAN_FILE = LEGACY_PLAN_FILE
+STATE_FILE = LEGACY_STATE_FILE
+OUTPUT_DIR = LEGACY_OUTPUT_DIR
 FINAL_VIDEO = OUTPUT_DIR / "rbl-launch-review.mp4"
 
 
@@ -87,7 +99,29 @@ def probe_video(path: Path) -> dict[str, Any]:
     return json.loads(result.stdout)
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Assemble one generated RBL video job for human review."
+    )
+    parser.add_argument(
+        "--plan",
+        type=Path,
+        default=PLAN_FILE,
+        help="Tracked video plan. Defaults to the historical launch plan.",
+    )
+    parser.add_argument("--state-file", type=Path, default=None)
+    parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument(
+        "--final-video",
+        type=Path,
+        default=None,
+        help="Optional final review-cut path override.",
+    )
+    return parser
+
+
 def main() -> int:
+    args = build_parser().parse_args()
     if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
         print(
             "ffmpeg/ffprobe are required for local assembly. Install them locally, "
@@ -95,14 +129,22 @@ def main() -> int:
         )
         return 2
 
-    plan = load_json(PLAN_FILE)
-    state = load_json(STATE_FILE)
+    plan = load_json(args.plan)
+    validate_video_plan(plan)
+    runtime = resolve_runtime_paths(
+        plan,
+        plan_path=args.plan,
+        state_file=args.state_file,
+        output_dir=args.output_dir,
+    )
+    state = load_json(runtime.state_file)
 
-    if state.get("launch_id") != plan.get("launch_id"):
-        print("Live generation state does not match the launch plan.")
+    identity_key, identity = plan_identity(plan)
+    if state.get(identity_key) != identity:
+        print("Live generation state does not match the video plan.")
         return 1
     if state.get("status") != "GENERATED":
-        print("All five launch shots must be generated before assembly.")
+        print("All planned video shots must be generated before assembly.")
         return 1
 
     inputs: list[Path] = []
@@ -112,17 +154,25 @@ def main() -> int:
         if not isinstance(record, dict) or record.get("status") != "COMPLETED":
             print(f"{shot_id}: missing completed generation record.")
             return 1
-        local_path = ROOT / record["local_path"]
+        local_path = resolve_recorded_path(str(record["local_path"]))
         if not local_path.is_file():
             print(f"{shot_id}: generated local MP4 is missing: {local_path}")
             return 1
         inputs.append(local_path)
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    command = build_ffmpeg_command(inputs, FINAL_VIDEO)
+    runtime.output_dir.mkdir(parents=True, exist_ok=True)
+    final_video = (
+        args.final_video
+        if args.final_video is not None and args.final_video.is_absolute()
+        else ROOT / args.final_video
+        if args.final_video is not None
+        else runtime.final_video
+    )
+    final_video.parent.mkdir(parents=True, exist_ok=True)
+    command = build_ffmpeg_command(inputs, final_video)
     subprocess.run(command, check=True)
 
-    metadata = probe_video(FINAL_VIDEO)
+    metadata = probe_video(final_video)
     streams = metadata.get("streams") or []
     if not streams:
         print("Final video contains no video stream.")
@@ -136,14 +186,18 @@ def main() -> int:
     if (width, height) != (720, 1280):
         print(f"Final video has unexpected dimensions: {width}x{height}.")
         return 1
-    if not 18.0 <= duration <= 22.5:
-        print(f"Final video has unexpected duration: {duration:.2f}s.")
+    expected_duration = float(plan["target_duration_seconds"])
+    if not expected_duration - 2.5 <= duration <= expected_duration + 2.5:
+        print(
+            "Final video has unexpected duration: "
+            f"{duration:.2f}s (expected about {expected_duration:.2f}s)."
+        )
         return 1
 
     state["status"] = "PENDING_HUMAN_REVIEW"
     state["publication_status"] = "BLOCKED_PENDING_HUMAN_REVIEW"
     state["final_video"] = {
-        "local_path": str(FINAL_VIDEO.relative_to(ROOT)),
+        "local_path": state_path_string(final_video),
         "width": width,
         "height": height,
         "duration_seconds": round(duration, 3),
@@ -154,9 +208,12 @@ def main() -> int:
             "response; consult the Higgsfield API billing console for actual spend."
         ),
     }
-    STATE_FILE.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    runtime.state_file.write_text(
+        json.dumps(state, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
-    print(str(FINAL_VIDEO))
+    print(str(final_video))
     print(
         "Status: PENDING_HUMAN_REVIEW. Do not publish this file until the human "
         "owner explicitly approves the final cut."
