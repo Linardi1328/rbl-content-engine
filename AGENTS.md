@@ -107,6 +107,21 @@ technical QC, and `PENDING_HUMAN_REVIEW` stop.
 Authority:
 `docs/production/V1_JOB_SCOPED_MEDIA.md`.
 
+The final V1 P0 gate is one real Customer Zero item through the complete weekly path:
+verified package -> storyboard -> job-scoped media generation -> local assembly/QC ->
+exact-asset human approval -> Phase 5 publication -> completed receipt -> offline
+acceptance evaluator. Synthetic fixtures may never satisfy this gate. Every platform
+enabled for the acceptance post must complete successfully, and at least one platform
+must reach actual `PUBLISHED` state.
+
+Do not invent Esther's final channel theme/storyline to make acceptance pass. The
+theme and first real topic are human-owned creative inputs. Until they are supplied,
+engineering may prepare or test the acceptance machinery but must not label Customer
+Zero as passed.
+
+Authority:
+`docs/production/V1_CUSTOMER_ZERO_ACCEPTANCE.md`.
+
 ## Phase 2A — Revenue & Audience Intelligence
 
 Phase 2A is a separate offline module inside the same parent project. Follow `docs/revenue-intelligence/PHASE_2A_SPEC.md`.

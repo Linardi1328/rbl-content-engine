@@ -18,3 +18,4 @@ Topview-specific operational documents remain under `docs/topview/`. Higgsfield,
 
 - `V1_WEEKLY_CONTENT_PACKAGE.md` — minimum evidence-backed 20–30s weekly script/storyboard path.
 - `V1_JOB_SCOPED_MEDIA.md` — isolated Higgsfield generation/assembly runtime per weekly `job_id`.
+- `V1_CUSTOMER_ZERO_ACCEPTANCE.md` — final real-item P0 gate before release-candidate preparation.
