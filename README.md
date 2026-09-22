@@ -4,7 +4,7 @@ Evidence-driven manual content pipeline for RBL Productions.
 
 ## Repository scope and current milestone
 
-Phase 0 remains the evidence-to-content foundation. Phase 2A/2B add the accepted offline revenue/audience learning loop. The active production milestone is **Phase 5 — Direct Social Publishing**, adding an RBL-owned scheduler and direct Instagram/TikTok/YouTube publishing adapters after the approved production workflow. Phase 0–4 remain historically scoped to their original human-review/publication boundaries.
+RBL Content Engine is in a V1 production-completion sprint for RBL Productions. The minimum weekly short-form path is now implemented as an offline evidence-backed content-package runner; the downstream repository also contains the live-verified Higgsfield production path and Phase 5 Instagram/TikTok/YouTube publishing adapters. Feature expansion is frozen until the internal weekly workflow can replace FacelessReels reliably.
 
 Phase 0 turns verified project/GitHub evidence into platform-native content drafts while keeping factual evidence and market strategy separate:
 
@@ -24,7 +24,7 @@ verified claims + strategy
   -> HUMAN APPROVAL
 ```
 
-The repository deliberately stops at human approval. It does **not** publish content, message customers, spend money, call paid APIs, perform live trend research, or automate video creation.
+The V1 weekly content-package runner stops at `PENDING_HUMAN` and performs no external side effects. Downstream production code can call the explicitly authorized Higgsfield API, and Phase 5 can publish only after the exact final platform assets have been human-approved and still match their approval fingerprints.
 
 PR #6 introduced a small local ProofLab-style contract in `src/rbl_content_engine/prooflab.py`. It provides `VerifiedClaim` and the fail-closed `require_verified_claims()` boundary for future generation contracts. This is local, dependency-free verification code; it does **not** authorize an external ProofLab service, network integration, or paid ProofLab action.
 
@@ -103,7 +103,7 @@ The local ProofLab boundary fails closed before factual claims may enter future 
 └── tests/
 ```
 
-Codex should implement Phase 0 from `docs/codex-phase-0-prompt.md`, while treating `AGENTS.md` and `docs/phase-0-spec.md` as authoritative constraints. Topview work must also follow `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, `docs/topview/DISCOVERY.md`, and the applicable pilot document.
+The historical full Phase 0 specification remains available for later completion. For the current internal V1 release gate, follow the smaller short-form path in `docs/production/V1_WEEKLY_CONTENT_PACKAGE.md` and `AGENTS.md`. Topview work must also follow `docs/topview/WORKFLOW.md`, `docs/topview/TOOL_MAP.md`, `docs/topview/DISCOVERY.md`, and the applicable pilot document.
 
 ## Platform treatments in the demo
 
@@ -115,6 +115,34 @@ The TaskPebble direction brief requests four deterministic treatments from the s
 - TikTok — short-form script + storyboard.
 
 The drafts should be meaningfully platform-native, not identical copy with different labels.
+
+## V1 weekly short-form run
+
+The minimum Customer Zero content-package path is:
+
+```text
+brief/topic
++ local evidence-backed claims
++ Esther-approved channel theme
+-> verified 20-30s script
+-> storyboard
+-> PENDING_HUMAN
+```
+
+Run the checked-in synthetic fixture:
+
+```bash
+rm -rf examples/weekly/output
+
+PYTHONPATH=src python -m rbl_content_engine weekly \
+  --brief examples/weekly/sample-brief.json \
+  --claims examples/weekly/sample-claims.json \
+  --theme examples/weekly/sample-channel-theme.json \
+  --output examples/weekly/output
+```
+
+The sample theme is not the final RBL creative direction; Esther's approved theme will
+replace it for production. See `docs/production/V1_WEEKLY_CONTENT_PACKAGE.md`.
 
 ## Development
 
