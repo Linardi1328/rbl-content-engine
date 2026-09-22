@@ -291,6 +291,45 @@ class CustomerZeroAcceptanceTests(unittest.TestCase):
             self.assertEqual(result["status"], "FAIL")
             self.assertIn("generation_state", result["failed_checks"])
 
+    def test_receipt_requires_provider_evidence(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
+            paths = build_acceptance_fixture(Path(directory))
+            receipt = json.loads(
+                paths["publication_receipt"].read_text(encoding="utf-8")
+            )
+            receipt["platforms"]["instagram"].pop("provider_id")
+            write_json(paths["publication_receipt"], receipt)
+
+            result = evaluate(paths)
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("enabled_platforms_complete", result["failed_checks"])
+
+    def test_enabled_platform_must_trace_to_content_and_media_targets(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
+            paths = build_acceptance_fixture(Path(directory))
+            content = json.loads(
+                paths["content_package"].read_text(encoding="utf-8")
+            )
+            content["targets"] = ["tiktok"]
+            write_json(paths["content_package"], content)
+
+            result = evaluate(paths)
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("publication_target_lineage", result["failed_checks"])
+
+    def test_malformed_qc_dimensions_fail_instead_of_crashing(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
+            paths = build_acceptance_fixture(Path(directory))
+            state = json.loads(
+                paths["generation_state"].read_text(encoding="utf-8")
+            )
+            state["final_video"]["width"] = "not-a-number"
+            write_json(paths["generation_state"], state)
+
+            result = evaluate(paths)
+            self.assertEqual(result["status"], "FAIL")
+            self.assertIn("final_review_cut", result["failed_checks"])
+
     def test_changed_asset_after_approval_cannot_pass(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
             paths = build_acceptance_fixture(Path(directory))
