@@ -24,7 +24,7 @@ from .production.video_job import (
     resolve_recorded_path,
     validate_video_plan,
 )
-from .publishing.core import load_post_manifest
+from .publishing.core import PublishBlocked, load_post_manifest
 
 
 PASS = "PASS"
@@ -315,7 +315,7 @@ def evaluate_customer_zero(
     manifest_error: str | None = None
     try:
         manifest = load_post_manifest(post_manifest_path)
-    except (ValueError, OSError) as exc:
+    except (ValueError, OSError, PublishBlocked) as exc:
         manifest_error = str(exc)
 
     enabled_platforms: list[str] = []
