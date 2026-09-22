@@ -13,6 +13,7 @@ from rbl_content_engine.production.video_job import (
     LEGACY_PLAN_FILE,
     LEGACY_STATE_FILE,
     plan_identity,
+    resolve_recorded_path,
     resolve_runtime_paths,
     validate_video_plan,
 )
@@ -112,6 +113,19 @@ class V1JobScopedMediaTests(unittest.TestCase):
         plan["publication_policy"] = "AUTO_PUBLISH"
         with self.assertRaisesRegex(ValueError, "blocked pending human review"):
             validate_video_plan(plan)
+
+    def test_recorded_media_path_cannot_escape_repository(self) -> None:
+        with self.assertRaisesRegex(ValueError, "escapes repository root"):
+            resolve_recorded_path("../outside.mp4")
+
+    def test_weekly_runtime_paths_cannot_be_overridden_from_cli(self) -> None:
+        generator = load_module("job_scoped_generator_no_override", GENERATOR)
+        assembler = load_module("job_scoped_assembler_no_override", ASSEMBLER)
+
+        with self.assertRaises(SystemExit):
+            generator.build_parser().parse_args(["--state-file", "shared.json"])
+        with self.assertRaises(SystemExit):
+            assembler.build_parser().parse_args(["--output-dir", "shared"])
 
     def test_generator_and_assembler_accept_explicit_weekly_plan(self) -> None:
         generator = load_module("job_scoped_generator_parser", GENERATOR)
