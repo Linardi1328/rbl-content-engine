@@ -1,7 +1,9 @@
-"""Generate the five-shot RBL launch reel with official Higgsfield Seedance 2.5.
+"""Generate one resumable RBL Seedance 2.5 video job.
 
-This script is intentionally resumable and never auto-retries a billable mutation.
-Runtime request IDs, media URLs, and downloaded outputs stay under ignored .production/.
+The historical no-argument launch workflow remains supported. Supplying a plan with a
+job_id uses isolated V1 runtime state under .production/jobs/<job_id>/.
+
+This script never auto-retries a billable mutation.
 """
 
 from __future__ import annotations
@@ -335,10 +337,15 @@ def main() -> int:
     if runtime.legacy_launch:
         next_command = "uv run python scripts/assemble_rbl_launch_video.py"
     else:
-        next_command = (
-            "uv run python scripts/assemble_rbl_launch_video.py "
-            f"--plan {args.plan}"
-        )
+        command_parts = [
+            "uv run python scripts/assemble_rbl_launch_video.py",
+            f"--plan {args.plan}",
+        ]
+        if args.state_file is not None:
+            command_parts.append(f"--state-file {args.state_file}")
+        if args.output_dir is not None:
+            command_parts.append(f"--output-dir {args.output_dir}")
+        next_command = " ".join(command_parts)
     print(
         "All video-job shots are generated. No content has been published. "
         f"Next: {next_command}"
