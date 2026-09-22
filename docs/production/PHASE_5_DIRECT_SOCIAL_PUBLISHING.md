@@ -17,6 +17,7 @@ Earlier Phase 0–4 publication gates remain unchanged. Phase 5 is a new, explic
 ```text
 final RBL master
 -> platform-specific exports
+-> explicit human approval of exact asset hashes
 -> Phase 5 post manifest
 -> local schedule queue
 -> due-time platform publisher
@@ -53,11 +54,26 @@ The manifest defines:
 - platform-specific video exports;
 - per-platform captions/titles/configuration;
 - AI-generated-media flag;
-- TikTok compliance/consent receipt.
+- TikTok compliance/consent receipt;
+- explicit final human approval with a timezone-aware confirmation time;
+- SHA-256 digests for every enabled platform asset;
+- the approved external media URL where a platform publishes by URL (currently Instagram).
 
-The scheduler never invents metadata at publish time.
+The scheduler never invents metadata at publish time. Final RBL publication approval is separate from TikTok's platform-specific consent. The approval hashes bind the human decision to the exact local bytes reviewed; replacing an approved file blocks preflight, scheduling, and publication until the new bytes are approved again. For URL-ingested assets, the approval also binds the exact public URL. Production staging should treat that URL as immutable after approval.
+
+The checked-in example uses all-zero placeholder hashes only to show the schema. Do not hand-edit production hashes. Record them from the actual final files with the approval command below.
 
 ## CLI
+
+Approve the exact current media after the human reviewer has inspected the final exports:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing approve \
+  path/to/post.json \
+  --human-confirmed
+```
+
+This command writes the approval timestamp and SHA-256 digest for each enabled platform asset into the manifest, plus any external media URL used by the platform. Any later change to an approved file or approved URL invalidates the approval.
 
 Validate without network calls:
 
@@ -211,4 +227,4 @@ Before first live publication, the owner must complete the respective provider s
 3. Google Cloud project + YouTube Data API + OAuth consent/client + any required compliance audit.
 4. Public HTTPS media hosting for Instagram's Reel `video_url`.
 
-After those prerequisites are connected and tokens are configured locally, the scheduler can execute due Phase 5 manifests without another RBL owner prompt, except where a platform itself requires per-post consent (currently TikTok Direct Post).
+After those prerequisites are connected and tokens are configured locally, the scheduler can execute a due Phase 5 manifest only after the final platform assets have been explicitly human-approved and their current SHA-256 hashes still match. TikTok Direct Post additionally retains its separate per-post platform consent requirements.

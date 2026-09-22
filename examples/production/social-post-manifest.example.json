@@ -60,5 +60,17 @@
       "made_for_kids": false,
       "privacy_status": "public"
     }
+  },
+  "approval": {
+    "human_confirmed": true,
+    "confirmed_at": "2026-10-02T18:45:00+08:00",
+    "asset_sha256": {
+      "instagram": "0000000000000000000000000000000000000000000000000000000000000000",
+      "tiktok": "0000000000000000000000000000000000000000000000000000000000000000",
+      "youtube": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "asset_public_urls": {
+      "instagram": "https://media.example.com/rbl/RBL-STORY-001-instagram.mp4"
+    }
   }
 }

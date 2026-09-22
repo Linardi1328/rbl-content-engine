@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
@@ -18,6 +19,7 @@ from rbl_content_engine.publishing.core import (
     TikTokPublisher,
     YouTubePublisher,
     _tiktok_chunk_plan,
+    approve_post_manifest,
     publish_due_jobs,
     validate_post_manifest,
 )
@@ -69,7 +71,7 @@ def make_manifest(tmp: Path, scheduled_at: str = "2026-10-02T19:30:00+08:00") ->
     for path in (default, instagram, tiktok, youtube):
         path.write_bytes(b"\x00\x00\x00\x18ftypmp42" + b"x" * 4096)
 
-    return {
+    manifest = {
         "schema_version": "1.0.0",
         "post_id": "RBL-TEST-001",
         "scheduled_at": scheduled_at,
@@ -117,9 +119,98 @@ def make_manifest(tmp: Path, scheduled_at: str = "2026-10-02T19:30:00+08:00") ->
             },
         },
     }
+    manifest["approval"] = {
+        "human_confirmed": True,
+        "confirmed_at": "2026-10-02T18:15:00+08:00",
+        "asset_sha256": {
+            "instagram": hashlib.sha256(instagram.read_bytes()).hexdigest(),
+            "tiktok": hashlib.sha256(tiktok.read_bytes()).hexdigest(),
+            "youtube": hashlib.sha256(youtube.read_bytes()).hexdigest(),
+        },
+        "asset_public_urls": {
+            "instagram": "https://media.example.test/rbl-test.mp4",
+        },
+    }
+    return manifest
 
 
 class PublishingManifestTests(unittest.TestCase):
+    def test_manifest_requires_final_human_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            del manifest["approval"]
+            with self.assertRaisesRegex(PublishBlocked, "human publication approval"):
+                validate_post_manifest(manifest)
+
+    def test_manifest_requires_explicit_human_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            manifest["approval"]["human_confirmed"] = False
+            with self.assertRaisesRegex(PublishBlocked, "human_confirmed"):
+                validate_post_manifest(manifest)
+
+    def test_manifest_blocks_asset_changed_after_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = make_manifest(root)
+            Path(manifest["assets"]["youtube"]["path"]).write_bytes(
+                b"changed after approval"
+            )
+            with self.assertRaisesRegex(PublishBlocked, "changed after human approval"):
+                validate_post_manifest(manifest)
+
+    def test_manifest_blocks_instagram_public_url_changed_after_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            manifest["assets"]["instagram"]["public_url"] = (
+                "https://media.example.test/different.mp4"
+            )
+            with self.assertRaisesRegex(PublishBlocked, "public asset URL changed"):
+                validate_post_manifest(manifest)
+
+    def test_manifest_requires_timezone_aware_approval_time(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            manifest["approval"]["confirmed_at"] = "2026-10-02T18:15:00"
+            with self.assertRaisesRegex(PublishBlocked, "confirmed_at"):
+                validate_post_manifest(manifest)
+
+    def test_approve_post_manifest_hashes_current_enabled_assets(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = make_manifest(root)
+            del manifest["approval"]
+            path = root / "manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            approved = approve_post_manifest(
+                path,
+                human_confirmed=True,
+                confirmed_at=datetime(2026, 10, 2, 10, 15, tzinfo=timezone.utc),
+            )
+
+            self.assertTrue(approved["approval"]["human_confirmed"])
+            self.assertEqual(
+                set(approved["approval"]["asset_sha256"]),
+                {"instagram", "tiktok", "youtube"},
+            )
+            self.assertEqual(
+                approved["approval"]["asset_public_urls"],
+                {"instagram": "https://media.example.test/rbl-test.mp4"},
+            )
+            validate_post_manifest(json.loads(path.read_text(encoding="utf-8")))
+
+    def test_approve_post_manifest_requires_explicit_confirmation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifest = make_manifest(root)
+            del manifest["approval"]
+            path = root / "manifest.json"
+            path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            with self.assertRaisesRegex(PublishBlocked, "explicit human confirmation"):
+                approve_post_manifest(path, human_confirmed=False)
+
     def test_manifest_requires_timezone_aware_schedule(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             manifest = make_manifest(Path(directory))
