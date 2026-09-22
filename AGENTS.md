@@ -63,6 +63,41 @@ verified claims + strategy
 
 Phase 0 must remain fully offline. It does not publish content, message customers, call paid APIs/models, automate live trend research, automate video production, or auto-approve content.
 
+## V1 production-completion short-form path
+
+The human owner has frozen feature expansion and authorized a minimum internal V1
+whose commercial goal is to replace FacelessReels for RBL Productions' normal weekly
+short-form workflow.
+
+For V1 release gating, the required upstream content path is intentionally smaller
+than the historical full Phase 0 exit criteria:
+
+```text
+weekly brief/topic
++ local project/story evidence and curated claims
++ human-authored channel theme/storyline
+-> deterministic claim verification
+-> one canonical 20-30 second short-form script
+-> one storyboard/shot plan
+-> PENDING_HUMAN
+```
+
+This V1 path may target YouTube Shorts, Instagram Reels, and TikTok with one canonical
+story package. Separate platform-native script variants and YouTube long-form concepts
+are deferred and must not block the internal V1 release.
+
+The reusable channel theme is human creative direction, not project evidence. It may
+define voice, recurring beat structure, visual style, and generic connective language,
+but it must never validate or invent factual claims.
+
+The V1 weekly content runner must remain offline and deterministic. It does not browse
+the web, call an LLM, generate media, auto-approve content, schedule posts, or publish.
+Downstream media generation and Phase 5 publication remain separate explicit stages,
+and final exact assets still require the Phase 5 human-approval gate.
+
+Authority for this minimum release path:
+`docs/production/V1_WEEKLY_CONTENT_PACKAGE.md`.
+
 ## Phase 2A — Revenue & Audience Intelligence
 
 Phase 2A is a separate offline module inside the same parent project. Follow `docs/revenue-intelligence/PHASE_2A_SPEC.md`.
