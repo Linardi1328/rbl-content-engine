@@ -1,0 +1,53 @@
+{
+  "project": "Synthetic Lost Wallet Story",
+  "claims": [
+    {
+      "id": "claim-001",
+      "text": "A commuter notices a wallet on an empty train seat.",
+      "evidence": [
+        {
+          "path": "examples/weekly/sample-evidence.md",
+          "start_line": 5,
+          "end_line": 5,
+          "quote": "A commuter notices a wallet on an empty train seat."
+        }
+      ]
+    },
+    {
+      "id": "claim-002",
+      "text": "The wallet contains an identification card and cash.",
+      "evidence": [
+        {
+          "path": "examples/weekly/sample-evidence.md",
+          "start_line": 6,
+          "end_line": 6,
+          "quote": "The wallet contains an identification card and cash."
+        }
+      ]
+    },
+    {
+      "id": "claim-003",
+      "text": "The commuter hands the wallet to station staff instead of keeping it.",
+      "evidence": [
+        {
+          "path": "examples/weekly/sample-evidence.md",
+          "start_line": 7,
+          "end_line": 7,
+          "quote": "The commuter hands the wallet to station staff instead of keeping it."
+        }
+      ]
+    },
+    {
+      "id": "claim-004",
+      "text": "The owner later retrieves the wallet from the station lost-and-found.",
+      "evidence": [
+        {
+          "path": "examples/weekly/sample-evidence.md",
+          "start_line": 8,
+          "end_line": 8,
+          "quote": "The owner later retrieves the wallet from the station lost-and-found."
+        }
+      ]
+    }
+  ]
+}
