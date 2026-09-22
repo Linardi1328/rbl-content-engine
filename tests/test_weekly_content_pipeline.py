@@ -336,6 +336,27 @@ class WeeklyContentPipelineTests(unittest.TestCase):
                     output_dir=Path("output"),
                 )
 
+    def test_checked_in_weekly_fixture_runs_end_to_end(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        fixture_root = repo_root / "examples" / "weekly"
+        with tempfile.TemporaryDirectory(dir=fixture_root) as directory:
+            output = Path(directory)
+            result = run_weekly_pipeline(
+                workspace_root=repo_root,
+                brief_path=Path("examples/weekly/sample-brief.json"),
+                claims_path=Path("examples/weekly/sample-claims.json"),
+                theme_path=Path("examples/weekly/sample-channel-theme.json"),
+                output_dir=output,
+            )
+            self.assertEqual(result["status"], "READY_FOR_HUMAN_REVIEW")
+            self.assertEqual(result["planned_duration_seconds"], 22)
+            self.assertEqual(
+                result["used_claim_ids"],
+                ["claim-001", "claim-002", "claim-003", "claim-004"],
+            )
+            self.assertTrue((output / "script.md").is_file())
+            self.assertTrue((output / "storyboard.json").is_file())
+
     def test_weekly_cli_runs_end_to_end(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
