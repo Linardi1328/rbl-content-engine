@@ -78,7 +78,7 @@ weekly brief/topic
 + human-authored channel theme/storyline
 -> deterministic claim verification
 -> one canonical 20-30 second short-form script
--> one storyboard/shot plan
+-> one storyboard/shot plan with 4-8 second generated beats
 -> PENDING_HUMAN
 ```
 
@@ -97,6 +97,15 @@ and final exact assets still require the Phase 5 human-approval gate.
 
 Authority for this minimum release path:
 `docs/production/V1_WEEKLY_CONTENT_PACKAGE.md`.
+
+For weekly media execution, a plan with `job_id` must use isolated runtime state
+under `.production/jobs/<job_id>/`. The historical launch plan/state remains
+backward-compatible and must not be migrated during V1. Job-scoped generation keeps
+the existing Seedance 2.5 model, US$20 project ceiling, no-auto-paid-retry behavior,
+technical QC, and `PENDING_HUMAN_REVIEW` stop.
+
+Authority:
+`docs/production/V1_JOB_SCOPED_MEDIA.md`.
 
 ## Phase 2A — Revenue & Audience Intelligence
 
