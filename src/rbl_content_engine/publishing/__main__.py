@@ -10,6 +10,7 @@ from .core import (
     DEFAULT_QUEUE,
     ScheduleQueue,
     TikTokPublisher,
+    approve_post_manifest,
     load_post_manifest,
     publish_due_jobs,
     run_scheduler,
@@ -29,9 +30,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     preflight.add_argument("manifest", type=Path)
 
+    approve = sub.add_parser(
+        "approve",
+        help="Explicitly approve the exact current platform assets for publication",
+    )
+    approve.add_argument("manifest", type=Path)
+    approve.add_argument(
+        "--human-confirmed",
+        action="store_true",
+        help="Required explicit confirmation that the final media was reviewed",
+    )
+
     schedule = sub.add_parser(
         "schedule",
-        help="Add a validated post manifest to the local scheduler queue",
+        help="Add a validated and human-approved post manifest to the local scheduler queue",
     )
     schedule.add_argument("manifest", type=Path)
     schedule.add_argument("--queue", type=Path, default=DEFAULT_QUEUE)
@@ -124,6 +136,25 @@ def main() -> int:
                     "scheduled_at": manifest["scheduled_at"],
                     "platforms": enabled,
                     "network_calls": 0,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.command == "approve":
+        approved = approve_post_manifest(
+            args.manifest,
+            human_confirmed=args.human_confirmed,
+        )
+        print(
+            json.dumps(
+                {
+                    "status": "APPROVED_FOR_PUBLICATION",
+                    "post_id": approved["post_id"],
+                    "confirmed_at": approved["approval"]["confirmed_at"],
+                    "platforms": sorted(approved["approval"]["asset_sha256"]),
                 },
                 indent=2,
                 sort_keys=True,
