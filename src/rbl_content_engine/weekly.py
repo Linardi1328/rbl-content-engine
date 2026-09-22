@@ -389,6 +389,13 @@ def run_weekly_pipeline(
 
     claims = tuple(item.claim for item in verifications)
     require_verified_claims(claims)
+    required_claim_beats = sum(
+        1 for beat in theme["beats"] if beat["source"] == "next_claim"
+    )
+    if required_claim_beats > len(claims):
+        raise ValueError(
+            "theme requires more next_claim beats than verified claims available"
+        )
     by_id = {item.claim.claim_id: item for item in verifications}
 
     claim_iter = iter(claims)
@@ -446,6 +453,7 @@ def run_weekly_pipeline(
             "visual_style": theme["visual_style"],
         },
         "planned_duration_seconds": total_duration,
+        "status": "READY_FOR_HUMAN_REVIEW",
         "verification_status": "PASS",
         "approval_status": APPROVAL_STATUS,
         "script_beats": script_beats,
