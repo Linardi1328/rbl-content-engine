@@ -109,14 +109,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=PLAN_FILE,
         help="Tracked video plan. Defaults to the historical launch plan.",
     )
-    parser.add_argument("--state-file", type=Path, default=None)
-    parser.add_argument("--output-dir", type=Path, default=None)
-    parser.add_argument(
-        "--final-video",
-        type=Path,
-        default=None,
-        help="Optional final review-cut path override.",
-    )
     return parser
 
 
@@ -131,12 +123,7 @@ def main() -> int:
 
     plan = load_json(args.plan)
     validate_video_plan(plan)
-    runtime = resolve_runtime_paths(
-        plan,
-        plan_path=args.plan,
-        state_file=args.state_file,
-        output_dir=args.output_dir,
-    )
+    runtime = resolve_runtime_paths(plan, plan_path=args.plan)
     state = load_json(runtime.state_file)
 
     identity_key, identity = plan_identity(plan)
@@ -161,13 +148,7 @@ def main() -> int:
         inputs.append(local_path)
 
     runtime.output_dir.mkdir(parents=True, exist_ok=True)
-    final_video = (
-        args.final_video
-        if args.final_video is not None and args.final_video.is_absolute()
-        else ROOT / args.final_video
-        if args.final_video is not None
-        else runtime.final_video
-    )
+    final_video = runtime.final_video
     final_video.parent.mkdir(parents=True, exist_ok=True)
     command = build_ffmpeg_command(inputs, final_video)
     subprocess.run(command, check=True)
