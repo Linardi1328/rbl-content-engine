@@ -144,6 +144,23 @@ PYTHONPATH=src python -m rbl_content_engine weekly \
 The sample theme is not the final RBL creative direction; Esther's approved theme will
 replace it for production. See `docs/production/V1_WEEKLY_CONTENT_PACKAGE.md`.
 
+Weekly media runtime is isolated by `job_id`:
+
+```bash
+uv run python scripts/generate_rbl_launch_video.py \
+  --plan examples/production/weekly-video-plan.example.json
+
+uv run python scripts/assemble_rbl_launch_video.py \
+  --plan examples/production/weekly-video-plan.example.json
+```
+
+This writes ignored runtime state/media under
+`.production/jobs/RBL-SAMPLE-WEEKLY-001/` and stops at
+`PENDING_HUMAN_REVIEW`. The historical launch workflow remains unchanged when the
+scripts are run without `--plan`.
+
+See `docs/production/V1_JOB_SCOPED_MEDIA.md`.
+
 ## Development
 
 Target runtime: Python 3.11+.
