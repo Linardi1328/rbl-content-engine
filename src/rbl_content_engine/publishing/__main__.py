@@ -142,8 +142,8 @@ def build_parser() -> argparse.ArgumentParser:
     youtube_auth.add_argument(
         "--timeout-seconds",
         type=float,
-        default=300.0,
-        help="Local callback listener timeout",
+        default=600.0,
+        help="Local callback listener timeout (default: 600 seconds)",
     )
 
     return parser

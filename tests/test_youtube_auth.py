@@ -3,19 +3,28 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 import urllib.parse
 from pathlib import Path
 from typing import Any, Mapping
+from unittest.mock import patch
 
-from rbl_content_engine.publishing.core import HttpResponse, HttpTransport
+from rbl_content_engine.publishing.__main__ import build_parser
+from rbl_content_engine.publishing.core import (
+    DEFAULT_AUTH_DIR,
+    HttpResponse,
+    HttpTransport,
+    PublishError,
+)
 from rbl_content_engine.publishing.youtube_auth import (
     build_authorization_url,
     code_challenge_for,
     exchange_authorization_code,
     generate_code_verifier,
     persist_token_state,
+    resolve_token_state_path,
 )
 
 
@@ -142,6 +151,70 @@ class YouTubeDesktopAuthTests(unittest.TestCase):
             self.assertEqual(stored["refresh_token"], "refresh-me")
             self.assertNotIn("must-not-persist", stored_text)
             self.assertNotIn("also-must-not-persist", stored_text)
+
+    def test_resolve_token_state_path_precedence(self) -> None:
+        explicit_path = Path("/custom/youtube.json")
+        self.assertEqual(resolve_token_state_path(explicit_path), explicit_path)
+
+        with patch.dict(os.environ, {"YOUTUBE_TOKEN_STATE_PATH": "~/env_youtube.json"}):
+            resolved = resolve_token_state_path()
+            self.assertEqual(resolved, Path("~/env_youtube.json").expanduser())
+
+            # Explicit path still overrides env var
+            self.assertEqual(resolve_token_state_path(explicit_path), explicit_path)
+
+        with patch.dict(os.environ, {}, clear=True):
+            resolved_default = resolve_token_state_path()
+            self.assertEqual(resolved_default, DEFAULT_AUTH_DIR / "youtube.json")
+
+    def test_persist_token_state_permissions_and_tightening(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target_dir = Path(directory) / "subdir"
+            state_path = target_dir / "youtube.json"
+
+            # Pre-create with loose permissions
+            target_dir.mkdir(parents=True, exist_ok=True, mode=0o777)
+            state_path.write_text("old", encoding="utf-8")
+            state_path.chmod(0o666)
+
+            persist_token_state(
+                {
+                    "refresh_token": "refresh-123",
+                    "scope": "https://www.googleapis.com/auth/youtube.upload",
+                    "token_type": "Bearer",
+                },
+                state_path=state_path,
+            )
+
+            # Both parent dir and file should be tightened
+            file_mode = state_path.stat().st_mode & 0o777
+            dir_mode = target_dir.stat().st_mode & 0o777
+            self.assertEqual(file_mode, 0o600)
+            self.assertEqual(dir_mode, 0o700)
+
+    def test_persist_token_state_fails_closed_on_permission_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            state_path = Path(directory) / "sub" / "youtube.json"
+            payload = {
+                "refresh_token": "refresh-123",
+                "scope": "https://www.googleapis.com/auth/youtube.upload",
+                "token_type": "Bearer",
+            }
+
+            with patch("os.fchmod", side_effect=OSError("fchmod permission denied")):
+                with self.assertRaises(PublishError) as ctx:
+                    persist_token_state(payload, state_path=state_path)
+                self.assertIn("cannot enforce 0600 permissions", str(ctx.exception))
+
+            with patch.object(Path, "chmod", side_effect=OSError("chmod permission denied")):
+                with self.assertRaises(PublishError) as ctx:
+                    persist_token_state(payload, state_path=state_path)
+                self.assertIn("cannot", str(ctx.exception))
+
+    def test_cli_parser_defaults_timeout_to_600(self) -> None:
+        parser = build_parser()
+        args = parser.parse_args(["youtube-auth"])
+        self.assertEqual(args.timeout_seconds, 600.0)
 
 
 if __name__ == "__main__":

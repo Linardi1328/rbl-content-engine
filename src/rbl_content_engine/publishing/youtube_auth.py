@@ -126,6 +126,16 @@ def exchange_authorization_code(
     return payload
 
 
+def resolve_token_state_path(state_path: Path | None = None) -> Path:
+    """Resolve the destination path for YouTube refresh-token state."""
+    if state_path is not None:
+        return state_path
+    state_override = os.environ.get("YOUTUBE_TOKEN_STATE_PATH", "").strip()
+    if state_override:
+        return Path(state_override).expanduser()
+    return DEFAULT_AUTH_DIR / "youtube.json"
+
+
 def persist_token_state(
     payload: Mapping[str, Any],
     *,
@@ -137,22 +147,72 @@ def persist_token_state(
     if not isinstance(refresh_token, str) or not refresh_token:
         raise PublishError("cannot persist YouTube token state without refresh_token")
 
-    path = state_path or (DEFAULT_AUTH_DIR / "youtube.json")
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = resolve_token_state_path(state_path)
+    parent = path.parent
+    try:
+        parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        try:
+            parent.chmod(0o700)
+        except (AttributeError, NotImplementedError):
+            pass
+    except OSError as exc:
+        raise PublishError(
+            f"cannot create or secure directory for YouTube token state {parent}: {exc}"
+        ) from exc
+
     state_payload = {
         "refresh_token": refresh_token,
         "scope": payload.get("scope"),
         "token_type": payload.get("token_type"),
         "updated_at": _utc_now().isoformat(),
     }
-    path.write_text(
-        json.dumps(state_payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
     try:
-        path.chmod(0o600)
-    except OSError:
-        pass
+        fd = os.open(path, flags, 0o600)
+    except OSError as exc:
+        raise PublishError(f"cannot open YouTube token state file {path}: {exc}") from exc
+
+    try:
+        try:
+            os.fchmod(fd, 0o600)
+        except (AttributeError, NotImplementedError):
+            pass
+        except OSError as exc:
+            raise PublishError(
+                f"cannot enforce 0600 permissions on YouTube token state {path}: {exc}"
+            ) from exc
+
+        with open(fd, "w", encoding="utf-8", closefd=True) as handle:
+            handle.write(json.dumps(state_payload, indent=2, sort_keys=True) + "\n")
+
+        try:
+            path.chmod(0o600)
+        except (AttributeError, NotImplementedError):
+            pass
+        except OSError as exc:
+            raise PublishError(
+                f"cannot enforce 0600 permissions on YouTube token state {path}: {exc}"
+            ) from exc
+    except PublishError:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        raise
+    except OSError as exc:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        raise PublishError(f"cannot write YouTube token state file {path}: {exc}") from exc
+    except Exception:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        raise
+
     return path
 
 

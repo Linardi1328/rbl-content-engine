@@ -18,7 +18,7 @@ Verified upload:
 - requested YouTube visibility: `private`
 - scheduler terminal state: `COMPLETE`
 - platform adapter state: `PUBLISHED`
-- YouTube video ID: `ouC1ZyFZn74`
+- YouTube video ID: recorded in the local ignored publication receipt (redacted here)
 - YouTube Studio verification: upload appeared on the RBL Productions Official channel with **Private** visibility
 
 The adapter's `PUBLISHED` state means the YouTube upload mutation completed successfully. It does **not** mean the video's YouTube visibility is public; visibility remains governed by the manifest's `privacy_status` and, when used, YouTube's native `publishAt` scheduling contract.
