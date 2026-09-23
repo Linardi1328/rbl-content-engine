@@ -215,7 +215,7 @@ def run_desktop_oauth(
     scopes: tuple[str, ...] = DEFAULT_SCOPES,
     state_path: Path | None = None,
     open_browser: bool = True,
-    timeout_seconds: float = 300.0,
+    timeout_seconds: float = 600.0,
     transport: HttpTransport | None = None,
 ) -> dict[str, Any]:
     """Run one interactive Google desktop authorization for YouTube upload."""
