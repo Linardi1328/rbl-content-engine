@@ -214,6 +214,12 @@ When intentionally called before the manifest's scheduled datetime, the adapter 
 
 New/unverified YouTube Data API projects can be restricted to private uploads until Google completes the required audit.
 
+The scheduler's terminal platform state `PUBLISHED` means the YouTube upload request completed and returned a video ID. It is **not** a statement that YouTube visibility is public. A manifest with `privacy_status: private` remains private even though the local upload state is `PUBLISHED`; a future native schedule uses `private` plus `status.publishAt` and is recorded as `NATIVE_SCHEDULED`.
+
+Owner live evidence for the private upload path is recorded in:
+
+`docs/production/LIVE_YOUTUBE_PRIVATE_2026-09-23.md`
+
 Official reference:
 https://developers.google.com/youtube/v3/docs/videos/insert
 
