@@ -40,6 +40,10 @@ make test:
 make build:
 ```
 
+## UI Evidence
+
+<!-- For changes that affect user-facing UI, attach or link screenshots, recordings, or preview URLs. If the PR has no UI change, write `N/A — no UI change`. -->
+
 ## Risks & Blockers
 
 <!-- Note any unresolved blockers, external prerequisites, or migration risks -->
