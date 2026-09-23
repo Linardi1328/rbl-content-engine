@@ -449,13 +449,18 @@ class YouTubeDesktopAuthTests(unittest.TestCase):
             # Verify target file was never truncated or touched
             self.assertEqual(target_file.read_text(encoding="utf-8"), "ORIGINAL SENSITIVE DATA")
 
-    def test_persist_token_state_rejects_symlinked_parent_component(self) -> None:
+    def test_persist_token_state_rejects_untrusted_symlink_parent(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
+            container = Path(directory) / "untrusted_dir"
+            container.mkdir(parents=True, exist_ok=True, mode=0o755)
             real_parent = Path(directory) / "real_dir"
             real_parent.mkdir(parents=True, exist_ok=True, mode=0o755)
 
-            symlink_parent = Path(directory) / "symlink_dir"
+            symlink_parent = container / "symlink_dir"
             os.symlink(real_parent, symlink_parent)
+
+            # Make the containing directory group/world-writable so it is untrusted
+            container.chmod(0o777)
 
             state_path = symlink_parent / "youtube.json"
 
@@ -468,7 +473,74 @@ class YouTubeDesktopAuthTests(unittest.TestCase):
                     },
                     state_path=state_path,
                 )
-            self.assertIn("component is a symlink", str(ctx.exception))
+            self.assertIn("untrusted symlink", str(ctx.exception))
+
+    def test_reject_symlink_components_untrusted_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            real_parent = Path(directory) / "real_dir"
+            real_parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+
+            symlink_parent = Path(directory) / "symlink_dir"
+            os.symlink(real_parent, symlink_parent)
+
+            state_path = symlink_parent / "youtube.json"
+
+            real_stat = os.stat
+
+            def mock_stat(p: Any, *args: Any, **kwargs: Any) -> os.stat_result:
+                if str(p) == str(directory):
+                    return os.stat_result((0o040755, 0, 0, 1, 99999, 99999, 0, 0, 0, 0))
+                return real_stat(p, *args, **kwargs)
+
+            with unittest.mock.patch("os.stat", side_effect=mock_stat):
+                with self.assertRaises(PublishError) as ctx:
+                    youtube_auth._reject_symlink_components(state_path)
+                self.assertIn("untrusted symlink", str(ctx.exception))
+
+    def test_reject_symlink_components_stat_oserror(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            real_parent = Path(directory) / "real_dir"
+            real_parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+
+            symlink_parent = Path(directory) / "symlink_dir"
+            os.symlink(real_parent, symlink_parent)
+
+            state_path = symlink_parent / "youtube.json"
+
+            real_stat = os.stat
+
+            def mock_stat(p: Any, *args: Any, **kwargs: Any) -> os.stat_result:
+                if str(p) == str(directory):
+                    raise PermissionError("EACCES")
+                return real_stat(p, *args, **kwargs)
+
+            with unittest.mock.patch("os.stat", side_effect=mock_stat):
+                with self.assertRaises(PublishError) as ctx:
+                    youtube_auth._reject_symlink_components(state_path)
+                self.assertIn("cannot inspect container", str(ctx.exception))
+
+    def test_persist_token_state_allows_trusted_symlink_parent(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            real_parent = Path(directory) / "real_dir"
+            real_parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+
+            symlink_parent = Path(directory) / "symlink_dir"
+            os.symlink(real_parent, symlink_parent)
+
+            state_path = symlink_parent / "youtube.json"
+
+            saved_path = persist_token_state(
+                {
+                    "refresh_token": "refresh-symlink-parent",
+                    "scope": "https://www.googleapis.com/auth/youtube.upload",
+                    "token_type": "Bearer",
+                },
+                state_path=state_path,
+            )
+            self.assertEqual(saved_path, state_path)
+            self.assertTrue(saved_path.is_file())
+            content = json.loads(saved_path.read_text(encoding="utf-8"))
+            self.assertEqual(content["refresh_token"], "refresh-symlink-parent")
 
     def test_persist_token_state_atomic_replacement_and_failure_cleanup(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

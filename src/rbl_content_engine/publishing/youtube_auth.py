@@ -138,7 +138,7 @@ def resolve_token_state_path(state_path: Path | None = None) -> Path:
 
 
 def _reject_symlink_components(path: Path) -> None:
-    """Ensure path and its ancestor components contain no symlinks."""
+    """Ensure the target is not a symlink and ancestor symlinks are trusted."""
     if not hasattr(os, "O_NOFOLLOW"):
         raise PublishError(
             "platform does not support O_NOFOLLOW; cannot guarantee secure token state persistence"
@@ -146,20 +146,24 @@ def _reject_symlink_components(path: Path) -> None:
     if path.is_symlink():
         raise PublishError(f"YouTube token state path is a symlink: {path}")
 
-    system_symlinks = {
-        Path("/var"),
-        Path("/tmp"),
-        Path("/etc"),
-        Path("/private/var"),
-        Path("/private/tmp"),
-        Path("/private/etc"),
-    }
+    current_uid = os.getuid() if hasattr(os, "getuid") else -1
     cur = path.parent
     while cur and cur != cur.parent and cur != Path("."):
-        if cur in system_symlinks:
-            break
         if cur.is_symlink():
-            raise PublishError(f"YouTube token state path component is a symlink: {cur}")
+            try:
+                holder = cur.parent.stat()
+            except OSError as exc:
+                raise PublishError(
+                    f"cannot inspect container of symlink path component {cur}: {exc}"
+                ) from exc
+
+            trusted_owner = holder.st_uid in (0, current_uid)
+            writable_by_others = bool(holder.st_mode & 0o022)
+
+            if not trusted_owner or writable_by_others:
+                raise PublishError(
+                    f"YouTube token state path component is an untrusted symlink: {cur}"
+                )
         cur = cur.parent
 
 
