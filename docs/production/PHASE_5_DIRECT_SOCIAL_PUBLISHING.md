@@ -173,19 +173,32 @@ Official references:
 
 ## YouTube
 
-Configure either a current short-lived token:
-
-```text
-YOUTUBE_ACCESS_TOKEN
-```
-
-or the recommended refreshable server-side credentials:
+For unattended publishing, create a Google OAuth **Desktop app** client and keep only
+the client credentials in ignored `.env.local`:
 
 ```text
 YOUTUBE_CLIENT_ID
 YOUTUBE_CLIENT_SECRET
-YOUTUBE_REFRESH_TOKEN
 ```
+
+Then run the one-time local installed-app authorization:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing youtube-auth
+```
+
+The command uses Google's loopback desktop OAuth flow with PKCE, requests offline
+`youtube.upload` access, opens the system browser, and stores only the resulting
+refresh token under:
+
+```text
+.production/social-auth/youtube.json
+```
+
+The publisher automatically reads that ignored state file and refreshes short-lived
+access tokens when needed. `YOUTUBE_REFRESH_TOKEN` remains supported as an explicit
+environment override, and `YOUTUBE_ACCESS_TOKEN` remains available for short-lived
+manual testing. Never commit or paste OAuth credentials or tokens into tracked files.
 
 The adapter uses YouTube's resumable upload flow. RBL sets:
 
