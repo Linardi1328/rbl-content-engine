@@ -29,5 +29,11 @@ jobs:
         run: uv sync --locked
       - name: Compile
         run: uv run --no-sync make check
+      - name: Lint
+        run: make lint
+      - name: Typecheck
+        run: make typecheck
       - name: Test
         run: uv run --no-sync make test
+      - name: Build
+        run: make build
