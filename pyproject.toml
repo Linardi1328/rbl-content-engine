@@ -19,3 +19,57 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "ruff>=0.16.8",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/rbl_content_engine/revenue/analytics.py" = ["E501"]
+"src/rbl_content_engine/revenue/reporting.py" = ["E501"]
+"src/rbl_content_engine/topview/__main__.py" = ["E501"]
+"src/rbl_content_engine/production/__init__.py" = ["E402"]
+"src/rbl_content_engine/topview/references.py" = ["F401"]
+"src/rbl_content_engine/acceptance.py" = ["E501"]
+"tests/test_phase5_social_publishing.py" = ["E731"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = ["tests", "src"]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "rbl_content_engine.production.stage3"
+disable_error_code = ["assignment"]
+
+[[tool.mypy.overrides]]
+module = "rbl_content_engine.revenue.phase2b"
+disable_error_code = ["assignment"]
+
+[[tool.mypy.overrides]]
+module = "rbl_content_engine.topview.__main__"
+disable_error_code = ["assignment", "attr-defined", "arg-type"]
+
+[[tool.mypy.overrides]]
+module = "rbl_content_engine.acceptance"
+disable_error_code = ["arg-type", "union-attr", "index"]
+
+[[tool.mypy.overrides]]
+module = "rbl_content_engine.publishing.tiktok_auth"
+disable_error_code = ["arg-type"]
+
+[[tool.mypy.overrides]]
+module = ["test_phase5_social_publishing", "tests.test_phase5_social_publishing"]
+disable_error_code = ["arg-type"]
+
+[[tool.mypy.overrides]]
+module = ["test_tiktok_auth", "tests.test_tiktok_auth"]
+disable_error_code = ["arg-type"]
