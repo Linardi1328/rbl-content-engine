@@ -104,8 +104,8 @@ def build_parser() -> argparse.ArgumentParser:
     tiktok_auth.add_argument(
         "--timeout-seconds",
         type=float,
-        default=300.0,
-        help="Local callback listener timeout",
+        default=600.0,
+        help="Local callback listener timeout (default: 600 seconds)",
     )
 
     sub.add_parser(
