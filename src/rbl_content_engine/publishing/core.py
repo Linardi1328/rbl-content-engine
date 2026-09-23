@@ -897,13 +897,17 @@ class YouTubePublisher:
             else DEFAULT_AUTH_DIR / "youtube.json"
         )
 
-        if refresh is None and state_path.is_file():
+        if access is None and refresh is None and state_path.is_file():
             try:
                 stored = json.loads(state_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
                 raise PublishBlocked(
                     f"YouTube token state is unreadable: {state_path}"
                 ) from exc
+            if not isinstance(stored, Mapping):
+                raise PublishBlocked(
+                    f"YouTube token state must be a JSON object: {state_path}"
+                )
             stored_refresh = stored.get("refresh_token")
             if isinstance(stored_refresh, str) and stored_refresh:
                 refresh = stored_refresh

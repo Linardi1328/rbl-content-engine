@@ -14,6 +14,7 @@ import json
 import os
 import secrets
 import string
+import time
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -136,6 +137,32 @@ def resolve_token_state_path(state_path: Path | None = None) -> Path:
     return DEFAULT_AUTH_DIR / "youtube.json"
 
 
+def _reject_symlink_components(path: Path) -> None:
+    """Ensure path and its ancestor components contain no symlinks."""
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise PublishError(
+            "platform does not support O_NOFOLLOW; cannot guarantee secure token state persistence"
+        )
+    if path.is_symlink():
+        raise PublishError(f"YouTube token state path is a symlink: {path}")
+
+    system_symlinks = {
+        Path("/var"),
+        Path("/tmp"),
+        Path("/etc"),
+        Path("/private/var"),
+        Path("/private/tmp"),
+        Path("/private/etc"),
+    }
+    cur = path.parent
+    while cur and cur != cur.parent and cur != Path("."):
+        if cur in system_symlinks:
+            break
+        if cur.is_symlink():
+            raise PublishError(f"YouTube token state path component is a symlink: {cur}")
+        cur = cur.parent
+
+
 def persist_token_state(
     payload: Mapping[str, Any],
     *,
@@ -148,17 +175,53 @@ def persist_token_state(
         raise PublishError("cannot persist YouTube token state without refresh_token")
 
     path = resolve_token_state_path(state_path)
+    _reject_symlink_components(path)
+
     parent = path.parent
-    try:
-        parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    is_default = path.resolve() == (DEFAULT_AUTH_DIR / "youtube.json").resolve()
+
+    if is_default:
         try:
+            parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             parent.chmod(0o700)
-        except (AttributeError, NotImplementedError):
-            pass
-    except OSError as exc:
-        raise PublishError(
-            f"cannot create or secure directory for YouTube token state {parent}: {exc}"
-        ) from exc
+        except OSError as exc:
+            raise PublishError(
+                f"cannot create or secure directory for YouTube token state {parent}: {exc}"
+            ) from exc
+        try:
+            st = parent.stat()
+            if (st.st_mode & 0o077) != 0:
+                raise PublishError(
+                    f"dedicated YouTube token directory must be owner-only (0700): {parent}"
+                )
+        except OSError as exc:
+            raise PublishError(
+                f"cannot inspect YouTube token directory {parent}: {exc}"
+            ) from exc
+    else:
+        if not parent.exists():
+            try:
+                parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            except OSError as exc:
+                raise PublishError(
+                    f"cannot create parent directory for YouTube token state {parent}: {exc}"
+                ) from exc
+        elif not parent.is_dir():
+            raise PublishError(f"YouTube token state parent is not a directory: {parent}")
+        if not os.access(parent, os.W_OK | os.X_OK):
+            raise PublishError(
+                f"YouTube token state parent directory is not writable: {parent}"
+            )
+        try:
+            st = parent.stat()
+            if (st.st_mode & 0o002) and not (st.st_mode & 0o1000):
+                raise PublishError(
+                    f"YouTube token state parent directory is insecure (world-writable without sticky bit): {parent}"
+                )
+        except OSError as exc:
+            raise PublishError(
+                f"cannot inspect YouTube token directory {parent}: {exc}"
+            ) from exc
 
     state_payload = {
         "refresh_token": refresh_token,
@@ -167,11 +230,14 @@ def persist_token_state(
         "updated_at": _utc_now().isoformat(),
     }
 
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    temp_path = parent / f".youtube-{secrets.token_hex(8)}.tmp"
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     try:
-        fd = os.open(path, flags, 0o600)
+        fd = os.open(temp_path, flags, 0o600)
     except OSError as exc:
-        raise PublishError(f"cannot open YouTube token state file {path}: {exc}") from exc
+        raise PublishError(
+            f"cannot create temporary YouTube token state file {temp_path}: {exc}"
+        ) from exc
 
     try:
         try:
@@ -179,36 +245,47 @@ def persist_token_state(
         except (AttributeError, NotImplementedError):
             pass
         except OSError as exc:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
             raise PublishError(
-                f"cannot enforce 0600 permissions on YouTube token state {path}: {exc}"
+                f"cannot enforce 0600 permissions on temporary YouTube token state {temp_path}: {exc}"
             ) from exc
 
-        with open(fd, "w", encoding="utf-8", closefd=True) as handle:
-            handle.write(json.dumps(state_payload, indent=2, sort_keys=True) + "\n")
+        content = (json.dumps(state_payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
+        try:
+            with open(fd, "wb", closefd=True) as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+        except OSError as exc:
+            raise PublishError(
+                f"cannot write temporary YouTube token state file {temp_path}: {exc}"
+            ) from exc
+
+        if path.is_symlink():
+            raise PublishError(f"YouTube token state destination is a symlink: {path}")
 
         try:
-            path.chmod(0o600)
-        except (AttributeError, NotImplementedError):
-            pass
+            os.replace(temp_path, path)
+        except OSError as exc:
+            raise PublishError(
+                f"cannot atomically replace YouTube token state file {path}: {exc}"
+            ) from exc
+
+        try:
+            try:
+                os.chmod(path, 0o600, follow_symlinks=False)
+            except (AttributeError, NotImplementedError, TypeError):
+                path.chmod(0o600)
         except OSError as exc:
             raise PublishError(
                 f"cannot enforce 0600 permissions on YouTube token state {path}: {exc}"
             ) from exc
-    except PublishError:
-        try:
-            os.close(fd)
-        except OSError:
-            pass
-        raise
-    except OSError as exc:
-        try:
-            os.close(fd)
-        except OSError:
-            pass
-        raise PublishError(f"cannot write YouTube token state file {path}: {exc}") from exc
     except Exception:
         try:
-            os.close(fd)
+            temp_path.unlink(missing_ok=True)
         except OSError:
             pass
         raise
@@ -235,7 +312,6 @@ def _callback_handler(
                 status = 404
                 message = "Unexpected callback path."
             elif params.get("state", [""])[0] != expected_state:
-                result["error"] = "OAuth state mismatch"
                 status = 400
                 message = "Authorization failed: state mismatch. You can close this window."
             elif params.get("error", [""])[0]:
@@ -270,6 +346,15 @@ def _callback_handler(
     return CallbackHandler
 
 
+class _OAuthServer(HTTPServer):
+    connection_timeout: float = 10.0
+
+    def get_request(self) -> tuple[Any, Any]:
+        sock, addr = super().get_request()
+        sock.settimeout(self.connection_timeout)
+        return sock, addr
+
+
 def run_desktop_oauth(
     *,
     scopes: tuple[str, ...] = DEFAULT_SCOPES,
@@ -297,8 +382,7 @@ def run_desktop_oauth(
         expected_state=state,
         result=callback_result,
     )
-    server = HTTPServer(("127.0.0.1", 0), handler)
-    server.timeout = timeout_seconds
+    server = _OAuthServer(("127.0.0.1", 0), handler)
     redirect_uri = f"http://127.0.0.1:{server.server_port}{callback_path}"
 
     authorization_url = build_authorization_url(
@@ -314,8 +398,17 @@ def run_desktop_oauth(
     if open_browser:
         webbrowser.open(authorization_url, new=2)
 
+    deadline = time.monotonic() + timeout_seconds
     try:
-        server.handle_request()
+        while (
+            time.monotonic() < deadline
+            and "code" not in callback_result
+            and "error" not in callback_result
+        ):
+            remaining = max(0.01, deadline - time.monotonic())
+            server.timeout = min(1.0, remaining)
+            server.connection_timeout = min(10.0, remaining)
+            server.handle_request()
     finally:
         server.server_close()
 

@@ -201,6 +201,14 @@ access tokens when needed. `YOUTUBE_REFRESH_TOKEN` remains supported as an expli
 environment override, and `YOUTUBE_ACCESS_TOKEN` remains available for short-lived
 manual testing. Never commit or paste OAuth credentials or tokens into tracked files.
 
+Operational note on token lifetime: for Google OAuth apps configured with an
+**External** consent screen in **Testing** publishing status, Google expires
+refresh tokens after 7 days. Operators working in Testing mode may need to re-run
+`youtube-auth` periodically. Longer-term unattended operation should use an
+appropriate Google Published/production configuration subject to Google's
+verification and compliance requirements. This operational note does not imply
+that the current RBL project is already approved for unrestricted public publishing.
+
 The adapter uses YouTube's resumable upload flow. RBL sets:
 
 - title;
