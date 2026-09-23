@@ -188,8 +188,9 @@ PYTHONPATH=src python -m rbl_content_engine.publishing youtube-auth
 ```
 
 The command uses Google's loopback desktop OAuth flow with PKCE, requests offline
-`youtube.upload` access, opens the system browser, and stores only the resulting
-refresh token under:
+`youtube.upload` access, opens the system browser, and waits up to 10 minutes for the
+local callback so operators have enough time to complete Google's consent screens. It
+stores only the resulting refresh token under:
 
 ```text
 .production/social-auth/youtube.json
