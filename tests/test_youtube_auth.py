@@ -9,7 +9,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Any, Mapping
 
-from rbl_content_engine.publishing.core import HttpResponse
+from rbl_content_engine.publishing.core import HttpResponse, HttpTransport
 from rbl_content_engine.publishing.youtube_auth import (
     build_authorization_url,
     code_challenge_for,
@@ -19,7 +19,7 @@ from rbl_content_engine.publishing.youtube_auth import (
 )
 
 
-class FakeTransport:
+class FakeTransport(HttpTransport):
     def __init__(self, response: HttpResponse) -> None:
         self.response = response
         self.calls: list[dict[str, Any]] = []
