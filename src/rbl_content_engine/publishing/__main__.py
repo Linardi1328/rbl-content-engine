@@ -15,7 +15,8 @@ from .core import (
     publish_due_jobs,
     run_scheduler,
 )
-from .tiktok_auth import DEFAULT_REDIRECT_URI, run_desktop_oauth
+from .tiktok_auth import DEFAULT_REDIRECT_URI, run_desktop_oauth as run_tiktok_desktop_oauth
+from .youtube_auth import run_desktop_oauth as run_youtube_desktop_oauth
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -103,8 +104,8 @@ def build_parser() -> argparse.ArgumentParser:
     tiktok_auth.add_argument(
         "--timeout-seconds",
         type=float,
-        default=300.0,
-        help="Local callback listener timeout",
+        default=600.0,
+        help="Local callback listener timeout (default: 600 seconds)",
     )
 
     sub.add_parser(
@@ -113,6 +114,36 @@ def build_parser() -> argparse.ArgumentParser:
             "Refresh TikTok auth if needed and query the connected creator's "
             "current Direct Post capabilities"
         ),
+    )
+
+    youtube_auth = sub.add_parser(
+        "youtube-auth",
+        help=(
+            "Authorize YouTube upload access with Google desktop OAuth and "
+            "persist refresh-token state locally"
+        ),
+    )
+    youtube_auth.add_argument(
+        "--scopes",
+        default="https://www.googleapis.com/auth/youtube.upload",
+        help="Comma-separated Google OAuth scopes",
+    )
+    youtube_auth.add_argument(
+        "--state-path",
+        type=Path,
+        default=None,
+        help="Optional YouTube refresh-token state path override",
+    )
+    youtube_auth.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Print the authorization URL without opening the system browser",
+    )
+    youtube_auth.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=600.0,
+        help="Local callback listener timeout (default: 600 seconds)",
     )
 
     return parser
@@ -245,8 +276,19 @@ def main() -> int:
 
     if args.command == "tiktok-auth":
         scopes = tuple(scope.strip() for scope in args.scopes.split(",") if scope.strip())
-        result = run_desktop_oauth(
+        result = run_tiktok_desktop_oauth(
             redirect_uri=args.redirect_uri,
+            scopes=scopes,
+            state_path=args.state_path,
+            open_browser=not args.no_browser,
+            timeout_seconds=args.timeout_seconds,
+        )
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+
+    if args.command == "youtube-auth":
+        scopes = tuple(scope.strip() for scope in args.scopes.split(",") if scope.strip())
+        result = run_youtube_desktop_oauth(
             scopes=scopes,
             state_path=args.state_path,
             open_browser=not args.no_browser,

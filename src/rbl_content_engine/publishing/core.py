@@ -890,10 +890,34 @@ class YouTubePublisher:
         client_id = os.environ.get("YOUTUBE_CLIENT_ID", "").strip() or None
         client_secret = os.environ.get("YOUTUBE_CLIENT_SECRET", "").strip() or None
         refresh = os.environ.get("YOUTUBE_REFRESH_TOKEN", "").strip() or None
+        state_override = os.environ.get("YOUTUBE_TOKEN_STATE_PATH", "").strip()
+        state_path = (
+            Path(state_override).expanduser()
+            if state_override
+            else DEFAULT_AUTH_DIR / "youtube.json"
+        )
+
+        if access is None and refresh is None and state_path.is_file():
+            try:
+                stored = json.loads(state_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise PublishBlocked(
+                    f"YouTube token state is unreadable: {state_path}"
+                ) from exc
+            if not isinstance(stored, Mapping):
+                raise PublishBlocked(
+                    f"YouTube token state must be a JSON object: {state_path}"
+                )
+            stored_refresh = stored.get("refresh_token")
+            if isinstance(stored_refresh, str) and stored_refresh:
+                refresh = stored_refresh
+
         if access is None and not all((client_id, client_secret, refresh)):
             raise PublishBlocked(
-                "configure YOUTUBE_ACCESS_TOKEN or "
-                "YOUTUBE_CLIENT_ID + YOUTUBE_CLIENT_SECRET + YOUTUBE_REFRESH_TOKEN"
+                "configure YOUTUBE_ACCESS_TOKEN for short-lived testing, or "
+                "YOUTUBE_CLIENT_ID + YOUTUBE_CLIENT_SECRET and run "
+                "'python -m rbl_content_engine.publishing youtube-auth' "
+                "to create unattended refresh-token state"
             )
         return cls(
             access_token=access,

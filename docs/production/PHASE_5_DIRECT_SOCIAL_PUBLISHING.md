@@ -173,19 +173,41 @@ Official references:
 
 ## YouTube
 
-Configure either a current short-lived token:
-
-```text
-YOUTUBE_ACCESS_TOKEN
-```
-
-or the recommended refreshable server-side credentials:
+For unattended publishing, create a Google OAuth **Desktop app** client and keep only
+the client credentials in ignored `.env.local`:
 
 ```text
 YOUTUBE_CLIENT_ID
 YOUTUBE_CLIENT_SECRET
-YOUTUBE_REFRESH_TOKEN
 ```
+
+Then run the one-time local installed-app authorization:
+
+```bash
+PYTHONPATH=src python -m rbl_content_engine.publishing youtube-auth
+```
+
+The command uses Google's loopback desktop OAuth flow with PKCE, requests offline
+`youtube.upload` access, opens the system browser, and waits up to 10 minutes for the
+local callback so operators have enough time to complete Google's consent screens. It
+stores only the resulting refresh token under:
+
+```text
+.production/social-auth/youtube.json
+```
+
+The publisher automatically reads that ignored state file and refreshes short-lived
+access tokens when needed. `YOUTUBE_REFRESH_TOKEN` remains supported as an explicit
+environment override, and `YOUTUBE_ACCESS_TOKEN` remains available for short-lived
+manual testing. Never commit or paste OAuth credentials or tokens into tracked files.
+
+Operational note on token lifetime: for Google OAuth apps configured with an
+**External** consent screen in **Testing** publishing status, Google expires
+refresh tokens after 7 days. Operators working in Testing mode may need to re-run
+`youtube-auth` periodically. Longer-term unattended operation should use an
+appropriate Google Published/production configuration subject to Google's
+verification and compliance requirements. This operational note does not imply
+that the current RBL project is already approved for unrestricted public publishing.
 
 The adapter uses YouTube's resumable upload flow. RBL sets:
 
@@ -200,6 +222,12 @@ The adapter uses YouTube's resumable upload flow. RBL sets:
 When intentionally called before the manifest's scheduled datetime, the adapter uses YouTube's native scheduling contract: `privacyStatus=private` plus `status.publishAt`. In the normal RBL daemon flow, the scheduler waits until the due time and publishes then.
 
 New/unverified YouTube Data API projects can be restricted to private uploads until Google completes the required audit.
+
+The scheduler's terminal platform state `PUBLISHED` means the YouTube upload request completed and returned a video ID. It is **not** a statement that YouTube visibility is public. A manifest with `privacy_status: private` remains private even though the local upload state is `PUBLISHED`; a future native schedule uses `private` plus `status.publishAt` and is recorded as `NATIVE_SCHEDULED`.
+
+Owner live evidence for the private upload path is recorded in:
+
+`docs/production/LIVE_YOUTUBE_PRIVATE_2026-09-23.md`
 
 Official reference:
 https://developers.google.com/youtube/v3/docs/videos/insert
