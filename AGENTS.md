@@ -364,3 +364,24 @@ A checked-in synthetic/public-safe example can:
 12. leave the Phase 0 factual-verification and human-approval boundaries intact.
 
 Stop Phase 2A there. Live analytics APIs, scheduled research, dashboards, databases, publishing, customer messaging, paid generation, and autonomous strategy changes require later explicit milestones.
+
+## Standardized engineering workflow
+
+All contributors and agents must follow standardized engineering quality gates and pull request conventions.
+
+### Development and quality-gate commands
+
+- `make check`: byte-compile Python files in `src` and `tests` to verify syntax.
+- `make lint`: run Ruff static code style and lint checks (`src` and `tests`).
+- `make typecheck`: run Mypy static type analysis across `src` and `tests` targeting Python 3.11+.
+- `make test`: run the complete unit test regression suite.
+- `make build`: build standard production distribution artifacts (wheel and sdist) via `uv build`.
+
+### Branch and pull request lifecycle
+
+- Work from a fresh branch created from current `main` (using standard prefixes: `feat/`, `fix/`, `chore/`, `docs/`).
+- Every pull request must address a specific objective and link its corresponding Linear issue key.
+- Use the standardized GitHub pull request template at `.github/pull_request_template.md`.
+- Verify all five quality gates (`make check`, `make lint`, `make typecheck`, `make test`, `make build`) locally before opening or updating a pull request.
+- Production PRs must pass the automated CI pipeline across all supported Python versions (3.11, 3.12, 3.13) before human review or merge.
+- Never merge directly to `main` without verified CI and required human approvals.
