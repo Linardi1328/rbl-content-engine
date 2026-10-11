@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import stat
 import tempfile
 import unittest
@@ -127,6 +128,23 @@ class TikTokDesktopAuthTests(unittest.TestCase):
                 self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
                 self.assertEqual(json.loads(path.read_text())["refresh_token"], value)
                 self.assertEqual([item.name for item in path.parent.iterdir()], ["tiktok.json"])
+
+    def test_token_replace_fsyncs_file_then_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            observed: list[int] = []
+            fsync = os.fsync
+
+            def verify_fsync(fd: int) -> None:
+                observed.append(stat.S_IFMT(os.fstat(fd).st_mode))
+                fsync(fd)
+
+            with patch(
+                "rbl_content_engine.publishing.token_storage.os.fsync",
+                side_effect=verify_fsync,
+            ):
+                persist_token_state({"refresh_token": "durable-refresh"}, state_path=Path(directory) / "tiktok.json")
+
+            self.assertEqual(observed, [stat.S_IFREG, stat.S_IFDIR])
 
     def test_symlink_token_destination_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -57,7 +57,12 @@ def write_private_json(path: Path, payload: Mapping[str, Any]) -> None:
         if path.is_symlink():
             raise PublishError("token state destination changed to a symlink")
         os.replace(temporary, path)
-        os.chmod(path, 0o600)
+        # The file is already created with 0600; durably persist its directory entry.
+        dir_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
     except OSError as exc:
         raise PublishError("could not persist secure OAuth token state") from exc
     finally:
