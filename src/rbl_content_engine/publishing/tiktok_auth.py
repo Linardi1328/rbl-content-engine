@@ -9,7 +9,6 @@ never written there.
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import secrets
 import string
@@ -20,6 +19,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .core import DEFAULT_AUTH_DIR, HttpTransport, PublishBlocked, PublishError, _utc_now
+from .token_storage import write_private_json
 
 AUTHORIZE_URL = "https://www.tiktok.com/v2/auth/authorize/"
 TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/"
@@ -150,22 +150,16 @@ def persist_token_state(
         raise PublishError("cannot persist TikTok token state without refresh_token")
 
     path = state_path or (DEFAULT_AUTH_DIR / "tiktok.json")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    state_payload = {
-        "refresh_token": refresh_token,
-        "scope": payload.get("scope"),
-        "open_id": payload.get("open_id"),
-        "refresh_expires_in": payload.get("refresh_expires_in"),
-        "updated_at": _utc_now().isoformat(),
-    }
-    path.write_text(
-        json.dumps(state_payload, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_private_json(
+        path,
+        {
+            "refresh_token": refresh_token,
+            "scope": payload.get("scope"),
+            "open_id": payload.get("open_id"),
+            "refresh_expires_in": payload.get("refresh_expires_in"),
+            "updated_at": _utc_now().isoformat(),
+        },
     )
-    try:
-        path.chmod(0o600)
-    except OSError:
-        pass
     return path
 
 

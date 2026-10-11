@@ -135,6 +135,15 @@ def make_manifest(tmp: Path, scheduled_at: str = "2026-10-02T19:30:00+08:00") ->
 
 
 class PublishingManifestTests(unittest.TestCase):
+    def test_manifest_rejects_unsafe_receipt_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = make_manifest(Path(directory))
+            for bad_id in ("../outside", "x/../../../oops", "x\\oops", "..", ".hidden", "spaces here", "a" * 129):
+                with self.subTest(post_id=bad_id):
+                    manifest["post_id"] = bad_id
+                    with self.assertRaisesRegex(ValueError, "safe, bounded"):
+                        validate_post_manifest(manifest)
+
     def test_manifest_requires_final_human_approval(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             manifest = make_manifest(Path(directory))
