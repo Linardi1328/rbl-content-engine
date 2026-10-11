@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import stat
 import tempfile
 import unittest
 import urllib.parse
 from pathlib import Path
 from typing import Any, Mapping
+from unittest.mock import patch
+
+from rbl_content_engine.publishing.core import PublishError
 
 from rbl_content_engine.publishing.core import HttpResponse
 from rbl_content_engine.publishing.tiktok_auth import (
@@ -114,6 +118,36 @@ class TikTokDesktopAuthTests(unittest.TestCase):
             body["redirect_uri"],
             ["http://127.0.0.1:3455/callback/"],
         )
+
+    def test_token_file_mode_and_atomic_rotation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "tiktok.json"
+            for value in ("first-refresh", "second-refresh"):
+                persist_token_state({"refresh_token": value}, state_path=path)
+                self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+                self.assertEqual(json.loads(path.read_text())["refresh_token"], value)
+                self.assertEqual([item.name for item in path.parent.iterdir()], ["tiktok.json"])
+
+    def test_symlink_token_destination_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "not-a-token.json"
+            target.write_text("safe", encoding="utf-8")
+            link = root / "tiktok.json"
+            link.symlink_to(target)
+            with self.assertRaises(PublishError):
+                persist_token_state({"refresh_token": "new-secret"}, state_path=link)
+            self.assertEqual(target.read_text(encoding="utf-8"), "safe")
+
+    def test_failed_token_replace_preserves_existing_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "tiktok.json"
+            persist_token_state({"refresh_token": "previous"}, state_path=path)
+            with patch("rbl_content_engine.publishing.token_storage.os.replace", side_effect=OSError("injected")):
+                with self.assertRaises(PublishError):
+                    persist_token_state({"refresh_token": "replacement"}, state_path=path)
+            self.assertEqual(json.loads(path.read_text())["refresh_token"], "previous")
+            self.assertEqual([item.name for item in path.parent.iterdir()], ["tiktok.json"])
 
     def test_persisted_state_excludes_short_lived_access_token_and_client_secret(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

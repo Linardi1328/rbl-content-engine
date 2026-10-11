@@ -17,6 +17,7 @@ import hashlib
 import json
 import mimetypes
 import os
+import re
 import tempfile
 import time
 import urllib.error
@@ -290,6 +291,8 @@ def validate_post_manifest(
     post_id = manifest.get("post_id")
     if not isinstance(post_id, str) or not post_id.strip():
         raise ValueError("post_id must be non-empty")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", post_id):
+        raise ValueError("post_id must be a safe, bounded filename component")
     scheduled_at = manifest.get("scheduled_at")
     if not isinstance(scheduled_at, str):
         raise ValueError("scheduled_at is required")
@@ -678,21 +681,17 @@ class TikTokPublisher:
             if not isinstance(new_refresh, str) or not new_refresh:
                 new_refresh = refresh_token
 
-            state_path.parent.mkdir(parents=True, exist_ok=True)
-            state_payload = {
-                "refresh_token": new_refresh,
-                "scope": payload.get("scope"),
-                "open_id": payload.get("open_id"),
-                "updated_at": _utc_now().isoformat(),
-            }
-            state_path.write_text(
-                json.dumps(state_payload, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
+            from .token_storage import write_private_json
+
+            write_private_json(
+                state_path,
+                {
+                    "refresh_token": new_refresh,
+                    "scope": payload.get("scope"),
+                    "open_id": payload.get("open_id"),
+                    "updated_at": _utc_now().isoformat(),
+                },
             )
-            try:
-                state_path.chmod(0o600)
-            except OSError:
-                pass
             return cls(access_token=access_token, transport=transport, **kwargs)
 
         access_token = os.environ.get("TIKTOK_ACCESS_TOKEN", "").strip()
