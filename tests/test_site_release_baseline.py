@@ -1,0 +1,56 @@
+"""Static-site accessibility and privacy regression checks (not legal certification)."""
+from __future__ import annotations
+
+import unittest
+from html.parser import HTMLParser
+from pathlib import Path
+
+SITE = Path(__file__).resolve().parents[1] / "site"
+
+
+class PageParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ids: set[str] = set()
+        self.links: list[dict[str, str]] = []
+        self.navs: list[dict[str, str]] = []
+        self.images: list[dict[str, str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        values = {key: (value or "") for key, value in attrs}
+        if "id" in values:
+            self.ids.add(values["id"])
+        if tag == "a":
+            self.links.append(values)
+        if tag == "nav":
+            self.navs.append(values)
+        if tag == "img":
+            self.images.append(values)
+
+
+class StaticSiteReleaseBaselineTests(unittest.TestCase):
+    def test_all_pages_have_skip_link_and_named_navigation(self) -> None:
+        for path in (SITE / "index.html", SITE / "privacy/index.html", SITE / "terms/index.html"):
+            with self.subTest(page=str(path)):
+                parser = PageParser()
+                parser.feed(path.read_text(encoding="utf-8"))
+                self.assertIn("main-content", parser.ids)
+                self.assertTrue(any(link.get("href") == "#main-content" for link in parser.links))
+                self.assertTrue(any(nav.get("aria-label") == "Primary" for nav in parser.navs))
+                self.assertTrue(all("alt" in image for image in parser.images))
+
+    def test_mobile_navigation_stays_available(self) -> None:
+        styles = (SITE / "styles.css").read_text(encoding="utf-8")
+        self.assertIn(".nav nav { width: 100%", styles)
+        self.assertNotIn("nav { display: none; }", styles)
+        self.assertIn(":focus-visible", styles)
+        self.assertIn("prefers-reduced-motion", styles)
+
+    def test_privacy_requests_not_collected_in_public_issues(self) -> None:
+        privacy = (SITE / "privacy/index.html").read_text(encoding="utf-8")
+        self.assertIn("Do not post names, contact details", privacy)
+        self.assertIn("existing private communication channel", privacy)
+
+
+if __name__ == "__main__":
+    unittest.main()

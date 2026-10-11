@@ -9,14 +9,15 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header>
     <div class="wrap nav">
       <a class="brand" href="/"><img src="/assets/rbl-logo.webp" alt="RBL Productions logo" class="brand-logo" width="44" height="44"><span>RBL Content Engine</span></a>
-      <nav><a href="/">Home</a><a href="/terms/">Terms of Service</a></nav>
+      <nav aria-label="Primary"><a href="/">Home</a><a href="/terms/">Terms of Service</a></nav>
     </div>
   </header>
 
-  <main class="legal">
+  <main class="legal" id="main-content">
     <span class="eyebrow">Legal</span>
     <h1>Privacy Policy</h1>
     <p class="meta">Effective: 21 September 2026</p>
@@ -44,7 +45,7 @@
     <p>Local authorization state is retained only while it is needed to maintain the authorized integration. Publication receipts may retain provider identifiers, timestamps, and status information so the application can avoid accidental duplicate submissions and maintain an operational record. Public website hosting logs may be retained according to the hosting provider's security and operational policies.</p>
 
     <h2>7. Revoking access and deleting data</h2>
-    <p>You can revoke a connected application's authorization from the relevant social platform's account settings. After revocation, local authorization state associated with that platform should be deleted from the application environment. Requests concerning RBL-controlled publication records or other locally held data can be submitted through the support channel below.</p>
+    <p>You can revoke a connected application's authorization from the relevant social platform's account settings. RBL-controlled local authorization state and publication records may require separate handling. To request access, correction, or deletion of data under RBL's control, contact the RBL operator who onboarded or authorized your account using your existing private communication channel. RBL may need to verify your authority to make the request. Some records may need to be retained for legitimate operational, security, or legal reasons.</p>
 
     <h2>8. Security</h2>
     <p>Credentials and authorization tokens are not intentionally committed to the public source repository or exposed through this website. The application is designed to keep runtime authentication state separate from tracked project files.</p>
@@ -56,7 +57,7 @@
     <p>Connected social platforms process information under their own privacy policies. Their practices are separate from this Privacy Policy.</p>
 
     <h2>11. Contact</h2>
-    <p>Privacy questions, access requests, or deletion requests can be submitted through the project's public support channel at <a href="https://github.com/Linardi1328/rbl-content-engine/issues">GitHub Issues</a>.</p>
+    <p>For personal-data requests, use the existing private communication channel through which you worked with the RBL operator. <strong>Do not post names, contact details, identity documents, access tokens, or other private information in public GitHub Issues.</strong> If you do not have an established private channel, you may open a <a href="https://github.com/Linardi1328/rbl-content-engine/issues">public technical-support issue</a> asking for a private way to contact RBL, without sharing personal data in that issue.</p>
 
     <h2>12. Changes to this policy</h2>
     <p>This policy may be updated when the application's data flows, platform permissions, or legal requirements change. The effective date above will be updated when material revisions are published.</p>
