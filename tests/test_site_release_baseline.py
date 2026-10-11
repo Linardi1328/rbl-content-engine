@@ -49,7 +49,11 @@ class StaticSiteReleaseBaselineTests(unittest.TestCase):
     def test_privacy_requests_not_collected_in_public_issues(self) -> None:
         privacy = (SITE / "privacy/index.html").read_text(encoding="utf-8")
         self.assertIn("Do not post names, contact details", privacy)
-        self.assertIn("existing private communication channel", privacy)
+        self.assertIn('href="mailto:richb.linardi@gmail.com"', privacy)
+        self.assertIn("Richie Bertrand Linardi", privacy)
+        self.assertIn("Do not send passwords, OAuth tokens", privacy)
+        terms = (SITE / "terms/index.html").read_text(encoding="utf-8")
+        self.assertIn('href="mailto:richb.linardi@gmail.com"', terms)
 
 
 if __name__ == "__main__":

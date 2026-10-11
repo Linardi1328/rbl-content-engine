@@ -9,14 +9,16 @@ content-production/publishing workflow.
 - Accessible skip links and visible mobile navigation on all three static pages.
 - Named navigation landmarks, alt text coverage checks, visible keyboard focus,
   reduced-motion styles and static regression tests.
-- Safer privacy-contact instructions that do not solicit personal data publicly.
+- Public privacy-contact instructions now provide the user-supplied email address
+  for private data-rights requests without sending personal data through GitHub Issues.
 - Publishing-identifier and TikTok token-storage hardening.
 
 ## Owner sign-off required before external-customer launch
 
-- [ ] **Dedicated private data-rights contact:** Publish a verified, monitored,
-  nonpublic contact route accessible even without a prior operator relationship.
-  Do not invent an email address or direct personal data into GitHub Issues.
+- [ ] **Private data-rights contact activation:** The user-supplied email
+  `richb.linardi@gmail.com` is now included as a nonpublic correspondence channel on
+  the static site. The operator must verify receipt, monitoring, and response
+  ownership before external-customer launch. No private phone number is published.
 - [ ] **Legal business details:** Confirm the real operator identity, applicable
   registration details and business contact disclosures for target markets.
 - [ ] **Policy accuracy:** Verify actual data, hosting logs, platform API scopes,
