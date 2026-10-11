@@ -6,6 +6,12 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 SITE = Path(__file__).resolve().parents[1] / "site"
+PAGES = (
+    SITE / "index.html",
+    SITE / "privacy/index.html",
+    SITE / "terms/index.html",
+    SITE / "support/index.html",
+)
 
 
 class PageParser(HTMLParser):
@@ -30,7 +36,7 @@ class PageParser(HTMLParser):
 
 class StaticSiteReleaseBaselineTests(unittest.TestCase):
     def test_all_pages_have_skip_link_and_named_navigation(self) -> None:
-        for path in (SITE / "index.html", SITE / "privacy/index.html", SITE / "terms/index.html", SITE / "support/index.html"):
+        for path in PAGES:
             with self.subTest(page=str(path)):
                 parser = PageParser()
                 parser.feed(path.read_text(encoding="utf-8"))
@@ -56,10 +62,9 @@ class StaticSiteReleaseBaselineTests(unittest.TestCase):
         terms = (SITE / "terms/index.html").read_text(encoding="utf-8")
         self.assertIn('href="mailto:richb.linardi@gmail.com"', terms)
 
-
     def test_support_links_and_private_contact(self) -> None:
         """Direct all primary support navigation to a private contact page."""
-        for path in (SITE / "index.html", SITE / "privacy/index.html", SITE / "terms/index.html", SITE / "support/index.html"):
+        for path in PAGES:
             with self.subTest(page=str(path)):
                 content = path.read_text(encoding="utf-8")
                 self.assertIn('href="/support/"', content.split("<footer>", 1)[1])
