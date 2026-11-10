@@ -1,8 +1,22 @@
-# RIC-138 — Local Creative Provider Experiment (Voicebox + Open Generative AI)
+# RIC-138 — Historical Local Creative Provider Experiment (Voicebox + Open Generative AI)
 
-**Status:** EXPERIMENT READY FOR OWNER SETUP; **not installed, tested or production-integrated**.  
+**Status:** Visual alternative CLOSED; Voicebox/Kokoro local narration produced; production integration NOT STARTED.  
 **Linear:** https://linear.app/rbl-productions/issue/RIC-138  
 **Bounded scope:** RBL Content Engine creative assets only. No change to live paid Higgsfield generator, V1 weekly runner, Phase 5 publication, or existing approval gates.
+
+## Decision record — 2026-11-10
+
+**VISUAL PILOT CLOSED. VOICEBOX-ONLY EXPERIMENT REMAINS OPEN.** This supersedes the visual setup and benchmark instructions below; they are retained as historical, **not executable next steps**.
+
+- Do not attempt Open Generative AI Gatekeeper override or install Draw Things for this pilot. Open Generative AI could not pass the owner's Mac security verification, so no local visual generations were completed.
+- No immediate open-source Higgsfield video replacement will be deployed. Phosphene reports local LTX-2.5 video on 16–24 GB Apple Silicon Macs, but speed, output quality, security/provenance and commercial licensing are unverified for the owner's M5/24GB Mac. Keep as future research, not this project's next implementation task.
+- Current Higgsfield/Seedance production and exact-byte human publication approvals are unchanged.
+- Voicebox with Kokoro has produced one 12.47-second 24 kHz mono WAV on the owner's Apple M5. Use it as an optional local narration candidate only; no production adapter, subscription cancellation, or publishing permission is implied.
+- Finish the real RBL Customer Zero milestone RIC-63 before returning to any tool/provider substitution sprint.
+
+See [RIC-138](https://linear.app/rbl-productions/issue/RIC-138) for the decision and the remaining quality/cost checks.
+
+---
 
 ## Why this is an experiment, not a provider migration
 
