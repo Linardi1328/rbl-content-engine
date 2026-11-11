@@ -164,6 +164,113 @@ class CueTests(unittest.TestCase):
             finishing.validate_cues(timings(), "ONE MORE SHOT", "a" * 64, 0.2)
 
 
+class AttestationTests(unittest.TestCase):
+    def test_valid_nonblank_attestations_remain_accepted(self) -> None:
+        """Preserve manual attestations without guessing license validity or alignment."""
+        for value in (
+            "Owner",
+            "  Licensed original score  ",
+            "Manual alignment from actual WAV",
+            "REPLACE_WITH_REVIEWER is a quoted label in this description",
+        ):
+            self.assertTrue(finishing.attested_text(value))
+        finishing.attestation(attest())
+        finishing.timing_attestation(timings())
+
+    def test_placeholders_fail_before_media_commands_without_state_changes(self) -> None:
+        """Reject template/blank attestations despite affirmative flags, before any subprocess."""
+        with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
+            root = Path(directory)
+            paths = build_acceptance_fixture(root)
+            plan = finishing.read_json(paths["media_plan"])
+            job = root / "jobs" / plan["job_id"]
+            job.mkdir(parents=True)
+            review = job / "review.mp4"
+            review.write_bytes(b"synthetic silent media; must not be probed")
+            state = finishing.read_json(paths["generation_state"])
+            state["final_video"]["local_path"] = str(review)
+            write_json(job / "higgsfield-state.json", state)
+            # Deliberately non-media bytes prove these guards run before probing,
+            # loudness analysis, libass discovery, or rendering is even attempted.
+            voice = root / "voice.wav"
+            voice.write_bytes(b"synthetic audio; must not be decoded")
+            audio = {
+                "path": str(voice),
+                "sha256": finishing.sha256(voice),
+                "gain_db": 0,
+                "license": "Original synthetic fixture",
+                **attest(),
+            }
+            manifest = {
+                "schema_version": "1.0.0",
+                "job_id": plan["job_id"],
+                "plan": str(paths["media_plan"]),
+                "content_package": str(paths["content_package"]),
+                "storyboard": str(paths["storyboard"]),
+                "narration": {**audio, "engine": "kokoro"},
+                "music": dict(audio),
+                "sfx": [{**audio, "start_seconds": 10}],
+                "timings": str(root / "timings.json"),
+            }
+            timing = timings()
+            timing["audio_sha256"] = finishing.sha256(voice)
+            manifest_path = root / "finishing.json"
+            cases = [
+                (track, field, sentinel)
+                for track in ("narration", "music", "sfx")
+                for field, sentinel in (
+                    ("reviewer", "REPLACE_WITH_REVIEWER"),
+                    ("license", "REPLACE_WITH_APPROVED_LICENSE_AND_SOURCE"),
+                )
+            ]
+            cases += [
+                ("timing", "reviewer", "REPLACE_WITH_REVIEWER"),
+                ("timing", "derivation_method", "REPLACE_WITH_METHOD_DERIVED_FROM_ACTUAL_WAV"),
+            ]
+            for track, field, sentinel in cases:
+                for invalid in (sentinel, f"  {sentinel}  ", "", "   "):
+                    with self.subTest(track=track, field=field, value=invalid):
+                        candidate, cue_input = copy.deepcopy(manifest), copy.deepcopy(timing)
+                        record = (
+                            cue_input
+                            if track == "timing"
+                            else candidate["sfx"][0]
+                            if track == "sfx"
+                            else candidate[track]
+                        )
+                        record[field] = invalid
+                        self.assertTrue(record["human_confirmed"])
+                        self.assertEqual(record["confirmed_at"], "2026-11-11T12:00:00+08:00")
+                        self.assertEqual(cue_input["review_status"], "HUMAN_CORRECTED")
+                        self.assertTrue(all(cue["verified"] for cue in cue_input["words"]))
+                        write_json(manifest_path, candidate)
+                        write_json(root / "timings.json", cue_input)
+                        before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+                        with (
+                            patch.object(video_job, "JOB_ROOT", root / "jobs"),
+                            patch.object(finishing.subprocess, "run") as subprocess_run,
+                        ):
+                            with self.assertRaises(ValueError):
+                                finishing.finish(manifest_path)
+                            subprocess_run.assert_not_called()
+                        after = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+                        self.assertEqual(after, before)
+                        self.assertFalse((job / ".social-finishing.lock").exists())
+                        self.assertEqual(
+                            sorted(path.name for path in job.iterdir()), ["higgsfield-state.json", "review.mp4"]
+                        )
+            # Valid attestations must pass the same preflight and reach probing.
+            write_json(manifest_path, manifest)
+            write_json(root / "timings.json", timing)
+            with (
+                patch.object(video_job, "JOB_ROOT", root / "jobs"),
+                patch.object(finishing.subprocess, "run", side_effect=RuntimeError("media probing reached")) as probe,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "media probing reached"):
+                    finishing.finish(manifest_path)
+                probe.assert_called_once()
+
+
 class FinishingIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

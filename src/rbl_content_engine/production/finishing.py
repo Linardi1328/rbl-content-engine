@@ -26,6 +26,13 @@ FINAL = "final-social-review.mp4"
 REPORT = "social-finishing-qc.json"
 CAPTIONS = "social-captions.ass"
 DIGEST = "final-social-review.sha256"
+ATTESTATION_SENTINELS = frozenset(
+    {
+        "REPLACE_WITH_REVIEWER",
+        "REPLACE_WITH_APPROVED_LICENSE_AND_SOURCE",
+        "REPLACE_WITH_METHOD_DERIVED_FROM_ACTUAL_WAV",
+    }
+)
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -64,11 +71,23 @@ def text(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def attested_text(value: Any) -> bool:
+    """Accept nonblank attestation text except the known template sentinels."""
+    return text(value) and value.strip() not in ATTESTATION_SENTINELS
+
+
 def attestation(record: dict[str, Any]) -> None:
     """Require a named human confirmation and a timezone-aware review timestamp."""
-    require(record.get("human_confirmed") is True and text(record.get("reviewer")), "Human review required")
+    require(record.get("human_confirmed") is True and attested_text(record.get("reviewer")), "Human review required")
     stamp = datetime.fromisoformat(str(record.get("confirmed_at", "")))
     require(stamp.tzinfo is not None and stamp.utcoffset() is not None, "Review timestamp requires timezone")
+
+
+def timing_attestation(timing: dict[str, Any]) -> None:
+    """Require completed timing-review metadata before any media command runs."""
+    require(attested_text(timing.get("derivation_method")), "Actual-WAV timing derivation method required")
+    require(timing.get("review_status") == "HUMAN_CORRECTED", "Machine-estimated/unverified timings rejected")
+    attestation(timing)
 
 
 def run(command: list[str], *, cwd: Path | None = None) -> str:
@@ -117,9 +136,7 @@ def validate_cues(
 ) -> list[dict[str, Any]]:
     """Require complete human-verified, ordered script cues bound to the exact WAV."""
     require(timing.get("audio_sha256") == wav_hash, "Timings must derive from this exact WAV")
-    require(text(timing.get("derivation_method")), "Actual-WAV timing derivation method required")
-    require(timing.get("review_status") == "HUMAN_CORRECTED", "Machine-estimated/unverified timings rejected")
-    attestation(timing)
+    timing_attestation(timing)
     cues = timing.get("words")
     tokens = transcript.split()
     require(isinstance(cues, list) and len(cues) == len(tokens) and len(tokens) > 1, "Missing/extra word cues")
@@ -283,7 +300,7 @@ def finish(manifest_path: Path, *, ffmpeg: str = "ffmpeg", ffprobe: str = "ffpro
         audio_paths = []
         for index, entry in enumerate(audio_entries):
             attestation(entry)
-            require(text(entry.get("license")), "Approved/licensed audio provenance required")
+            require(attested_text(entry.get("license")), "Approved/licensed audio provenance required")
             path = resolve_recorded_path(entry["path"])
             require(sha256(path) == entry.get("sha256"), "Approved audio bytes changed")
             require(-40 <= number(entry.get("gain_db", 0)) <= 0, "Audio gain must be -40 to 0 dB")
@@ -301,6 +318,8 @@ def finish(manifest_path: Path, *, ffmpeg: str = "ffmpeg", ffprobe: str = "ffpro
             read_json(paths[key]) for key in ("content_package", "storyboard", "generation_state")
         )
         transcript = validate_lineage(plan, content, storyboard, state, review)
+        timing = read_json(paths["timings"])
+        timing_attestation(timing)
         video_meta = probe(review, ffprobe)
         video_streams = streams(video_meta, "video")
         require(
@@ -324,7 +343,7 @@ def finish(manifest_path: Path, *, ffmpeg: str = "ffmpeg", ffprobe: str = "ffpro
         require(duration(audio_metas[1]) >= seconds, "Music must cover full video; no implicit looping")
         for entry, meta in zip(audio_entries[2:], audio_metas[2:]):
             require(entry["start_seconds"] + duration(meta) <= seconds, "SFX would be truncated")
-        cues = validate_cues(read_json(paths["timings"]), transcript, fingerprints["audio_0"], voice_seconds)
+        cues = validate_cues(timing, transcript, fingerprints["audio_0"], voice_seconds)
         filters_available = run([ffmpeg, "-hide_banner", "-filters"])
         require(
             bool(re.search(r"\bass\s", filters_available)) and "sidechaincompress" in filters_available,
