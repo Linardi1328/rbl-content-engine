@@ -82,6 +82,12 @@ def evaluate_customer_zero(
     human_confirmed_real_content: bool,
     finishing_report_path: Path | None = None,
 ) -> dict[str, Any]:
+    """Check a recorded real-content workflow without network calls or paid mutations.
+
+    Preserve the existing human-confirmation and exact-asset publication gates.
+    When a finishing report is supplied or detected, also verify its upstream
+    hashes and the finished bytes approved for every enabled platform.
+    """
     checks: list[AcceptanceCheck] = []
 
     content = _read_json(content_package_path)
@@ -476,6 +482,7 @@ def evaluate_customer_zero(
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Define offline acceptance inputs and the explicit real-content confirmation flag."""
     parser = argparse.ArgumentParser(
         description="Evaluate one real RBL V1 Customer Zero end-to-end acceptance run"
     )
@@ -495,6 +502,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Print the acceptance report and return a failing exit code unless all gates pass."""
     args = build_parser().parse_args()
     result = evaluate_customer_zero(
         content_package_path=args.content_package,

@@ -24,10 +24,12 @@ FFPROBE = os.environ.get("RBL_FFPROBE", shutil.which("ffprobe") or "ffprobe")
 
 
 def attest() -> dict:
+    """Return a clearly synthetic human-attestation fixture for validation tests."""
     return {"human_confirmed": True, "reviewer": "SYNTHETIC TEST ONLY", "confirmed_at": "2026-11-11T12:00:00+08:00"}
 
 
 def timings() -> dict:
+    """Build synthetic word cues for testing exact-WAV and human-review guards."""
     return {
         "audio_sha256": "a" * 64,
         "derivation_method": "synthetic test fixture; no real speech",
@@ -41,6 +43,7 @@ def timings() -> dict:
 
 
 def wav(path: Path, seconds: float, frequency: int, active_seconds: float | None = None) -> None:
+    """Write a local PCM test tone with an optional silent tail."""
     with wave.open(str(path), "wb") as handle:
         handle.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
         samples = (
@@ -53,6 +56,7 @@ def wav(path: Path, seconds: float, frequency: int, active_seconds: float | None
 
 
 def prepare(root: Path) -> tuple[dict[str, Path], Path, Path]:
+    """Create synthetic weekly records, silent media and licensed-tone finishing inputs."""
     paths = build_acceptance_fixture(root)
     plan = finishing.read_json(paths["media_plan"])
     job = root / "jobs" / plan["job_id"]
@@ -95,6 +99,7 @@ def prepare(root: Path) -> tuple[dict[str, Path], Path, Path]:
     write_json(timing_path, cues)
 
     def audio(path: Path, gain: int) -> dict:
+        """Bind a synthetic tone to its hash, gain and test-only rights attestation."""
         return {
             "path": str(path),
             "sha256": finishing.sha256(path),
@@ -121,6 +126,7 @@ def prepare(root: Path) -> tuple[dict[str, Path], Path, Path]:
 
 class CueTests(unittest.TestCase):
     def test_valid_cues_render_one_highlight_per_word_with_context(self) -> None:
+        """Check each word gets exactly one highlight while adjacent context stays visible."""
         cue_list = finishing.validate_cues(timings(), "ONE MORE SHOT", "a" * 64, 1)
         events = [line for line in finishing.render_ass(cue_list).splitlines() if line.startswith("Dialogue:")]
         self.assertEqual(len(events), 3)
@@ -130,6 +136,7 @@ class CueTests(unittest.TestCase):
         self.assertIn("{\\c&H00FFFF&}SHOT", events[-1])
 
     def test_bad_cues_fail_closed(self) -> None:
+        """Reject incomplete, unordered, unsafe or unverified timing inputs."""
         mutations = {
             "missing": lambda t: t["words"].pop(),
             "extra": lambda t: t["words"].append(t["words"][-1]),
@@ -160,10 +167,12 @@ class CueTests(unittest.TestCase):
 class FinishingIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
+        """Require a local libass-enabled FFmpeg before running media integration tests."""
         if not shutil.which(FFMPEG) or " ass " not in finishing.run([FFMPEG, "-hide_banner", "-filters"]):
             raise unittest.SkipTest("Set RBL_FFMPEG to a libass-enabled FFmpeg for media integration")
 
     def test_real_render_ducking_integrity_no_clobber_and_acceptance(self) -> None:
+        """Verify rendered media, ducking, immutable outputs and finished-file acceptance lineage."""
         with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
             root = Path(directory)
             paths, manifest, job = prepare(root)
@@ -184,6 +193,7 @@ class FinishingIntegrationTests(unittest.TestCase):
             # Measure the 220Hz music component under voice and in a later quiet
             # interval. This tests actual sidechain behavior, rather than graph text.
             def music_amplitude(start: float) -> float:
+                """Measure the synthetic music frequency in a decoded half-second audio window."""
                 raw = subprocess.run(
                     [
                         FFMPEG,
@@ -238,6 +248,7 @@ class FinishingIntegrationTests(unittest.TestCase):
             self.assertIn("social_finishing_lineage", result["failed_checks"])
 
     def test_blocked_inputs_never_emit_final_or_change_state(self) -> None:
+        """Ensure invalid inputs and occupied output paths preserve upstream state."""
         with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
             root = Path(directory)
             paths, manifest_path, job = prepare(root)
@@ -277,6 +288,7 @@ class FinishingIntegrationTests(unittest.TestCase):
                         write_json(cue_path, cues)
 
     def test_decode_failure_does_not_install_outputs(self) -> None:
+        """Verify failed decode QC leaves no installed finishing outputs or state changes."""
         with tempfile.TemporaryDirectory(dir=ROOT / ".production") as directory:
             root = Path(directory)
             paths, manifest, job = prepare(root)
@@ -284,6 +296,7 @@ class FinishingIntegrationTests(unittest.TestCase):
             real_run = finishing.run
 
             def fail_decode(command: list[str], *, cwd: Path | None = None) -> str:
+                """Simulate a decode failure while allowing other local media commands to run."""
                 if "-xerror" in command:
                     raise subprocess.CalledProcessError(1, command, stderr="synthetic decode failure")
                 return real_run(command, cwd=cwd)

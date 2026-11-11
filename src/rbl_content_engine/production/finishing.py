@@ -29,6 +29,7 @@ DIGEST = "final-social-review.sha256"
 
 
 def read_json(path: Path) -> dict[str, Any]:
+    """Read a local JSON object, rejecting other top-level value types."""
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError(f"Expected JSON object: {path}")
@@ -36,6 +37,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def sha256(path: Path) -> str:
+    """Hash file bytes in bounded chunks for exact-asset integrity checks."""
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -44,11 +46,13 @@ def sha256(path: Path) -> str:
 
 
 def require(condition: bool, message: str) -> None:
+    """Fail closed with a validation error when a required condition is false."""
     if not condition:
         raise ValueError(message)
 
 
 def number(value: Any) -> float:
+    """Validate finite numeric seconds or gain, rejecting booleans."""
     require(isinstance(value, (int, float)) and not isinstance(value, bool), "Expected numeric seconds/gain")
     result = float(value)
     require(math.isfinite(result), "Non-finite seconds/gain")
@@ -56,35 +60,42 @@ def number(value: Any) -> float:
 
 
 def text(value: Any) -> bool:
+    """Return whether a value is a nonblank string."""
     return isinstance(value, str) and bool(value.strip())
 
 
 def attestation(record: dict[str, Any]) -> None:
+    """Require a named human confirmation and a timezone-aware review timestamp."""
     require(record.get("human_confirmed") is True and text(record.get("reviewer")), "Human review required")
     stamp = datetime.fromisoformat(str(record.get("confirmed_at", "")))
     require(stamp.tzinfo is not None and stamp.utcoffset() is not None, "Review timestamp requires timezone")
 
 
 def run(command: list[str], *, cwd: Path | None = None) -> str:
+    """Run a local command, returning stdout and raising on a nonzero exit."""
     result = subprocess.run(command, cwd=cwd, check=True, capture_output=True, text=True)
     return result.stdout
 
 
 def probe(path: Path, ffprobe: str) -> dict[str, Any]:
+    """Read stream and container metadata using the selected local ffprobe."""
     return json.loads(run([ffprobe, "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)]))
 
 
 def duration(metadata: dict[str, Any]) -> float:
+    """Return a finite positive container duration in seconds."""
     value = float(metadata["format"]["duration"])
     require(math.isfinite(value) and value > 0, "Invalid media duration")
     return value
 
 
 def streams(metadata: dict[str, Any], kind: str) -> list[dict[str, Any]]:
+    """Select probed streams matching the requested codec type."""
     return [stream for stream in metadata["streams"] if stream.get("codec_type") == kind]
 
 
 def audio_levels(path: Path, ffmpeg: str) -> dict[str, float]:
+    """Measure mean and peak dBFS, rejecting unmeasurable or inaudible audio."""
     result = subprocess.run(
         [ffmpeg, "-hide_banner", "-nostdin", "-i", str(path), "-vn", "-af", "volumedetect", "-f", "null", "-"],
         check=True,
@@ -104,6 +115,7 @@ def audio_levels(path: Path, ffmpeg: str) -> dict[str, float]:
 def validate_cues(
     timing: dict[str, Any], transcript: str, wav_hash: str, audio_duration: float
 ) -> list[dict[str, Any]]:
+    """Require complete human-verified, ordered script cues bound to the exact WAV."""
     require(timing.get("audio_sha256") == wav_hash, "Timings must derive from this exact WAV")
     require(text(timing.get("derivation_method")), "Actual-WAV timing derivation method required")
     require(timing.get("review_status") == "HUMAN_CORRECTED", "Machine-estimated/unverified timings rejected")
@@ -126,11 +138,13 @@ def validate_cues(
 
 
 def ass_time(value: float) -> str:
+    """Format seconds as an ASS timestamp rounded to centiseconds."""
     ticks = round(value * 100)
     return f"{ticks // 360000}:{ticks // 6000 % 60:02}:{ticks // 100 % 60:02}.{ticks % 100:02}"
 
 
 def render_ass(cues: list[dict[str, Any]]) -> str:
+    """Build one highlight event per validated cue with two-word caption context."""
     header = (
         """[Script Info]
 ScriptType: v4.00+
@@ -177,6 +191,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 def validate_lineage(
     plan: dict[str, Any], content: dict[str, Any], storyboard: dict[str, Any], state: dict[str, Any], review: Path
 ) -> str:
+    """Validate upstream job, script, evidence and review gates; return the transcript."""
     validate_video_plan(plan)
     job_id = plan.get("job_id")
     require(
@@ -228,6 +243,12 @@ def validate_lineage(
 
 
 def finish(manifest_path: Path, *, ffmpeg: str = "ffmpeg", ffprobe: str = "ffprobe") -> dict[str, Any]:
+    """Render and validate a separate social review cut without changing upstream state.
+
+    Require approved audio attestations and exact-WAV word cues before rendering.
+    Install outputs without overwriting existing assets, record hashes and QC,
+    and leave publication blocked pending human review.
+    """
     manifest = read_json(manifest_path)
     require(manifest.get("schema_version") == "1.0.0", "Unsupported finishing manifest")
     paths = {name: resolve_recorded_path(manifest[name]) for name in ("plan", "content_package", "storyboard")}
@@ -442,6 +463,7 @@ def finish(manifest_path: Path, *, ffmpeg: str = "ffmpeg", ffprobe: str = "ffpro
 
 
 def main() -> int:
+    """Run the offline finishing CLI, reporting blocked inputs without granting approval."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--ffmpeg", default="ffmpeg")
