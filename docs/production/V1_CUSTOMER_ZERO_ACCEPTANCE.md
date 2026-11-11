@@ -223,3 +223,13 @@ Once the real theme and first topic/evidence are available, no additional V1 fea
 work should be introduced before attempting this run. Any defect discovered by the
 real run that blocks completion is promoted to P0; otherwise a PASS moves the project
 to release-candidate preparation.
+
+## Optional social finishing (RIC-139)
+
+After silent assembly, follow [V1_SOCIAL_FINISHING.md](V1_SOCIAL_FINISHING.md) for
+approved narration, human-corrected WAV-bound captions, and licensed music/SFX.
+Finishing is a separate local stage and leaves Higgsfield state and the silent cut
+unchanged. Review the finished file and obtain new exact-byte Phase 5 approval.
+When finishing is used, pass `--finishing-report` to the evaluator explicitly; the
+report is also detected automatically beside the generation state. All enabled
+platform exports must be exact copies of the QC-bound final file.

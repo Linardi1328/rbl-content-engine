@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "job_id": "JOB_ID",
+  "plan": ".production/customer-zero/JOB_ID/media-plan.json",
+  "content_package": ".production/customer-zero/JOB_ID/weekly-output/content-package.json",
+  "storyboard": ".production/customer-zero/JOB_ID/weekly-output/storyboard.json",
+  "narration": {
+    "path": ".production/jobs/JOB_ID/one-more-shot-kokoro.wav",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "license": "REPLACE_WITH_APPROVED_LICENSE_AND_SOURCE",
+    "gain_db": 0,
+    "human_confirmed": false,
+    "reviewer": "REPLACE_WITH_REVIEWER",
+    "confirmed_at": "2026-11-11T12:00:00+08:00",
+    "title": "ONE MORE SHOT",
+    "engine": "kokoro"
+  },
+  "music": {
+    "path": ".production/jobs/JOB_ID/REPLACE.wav",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "license": "REPLACE_WITH_APPROVED_LICENSE_AND_SOURCE",
+    "gain_db": -18,
+    "human_confirmed": false,
+    "reviewer": "REPLACE_WITH_REVIEWER",
+    "confirmed_at": "2026-11-11T12:00:00+08:00"
+  },
+  "sfx": [],
+  "timings": ".production/jobs/JOB_ID/word-timings.json"
+}

@@ -1,0 +1,28 @@
+{
+  "audio_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "derivation_method": "REPLACE_WITH_METHOD_DERIVED_FROM_ACTUAL_WAV",
+  "review_status": "NOT_HUMAN_VERIFIED",
+  "human_confirmed": false,
+  "reviewer": "REPLACE_WITH_REVIEWER",
+  "confirmed_at": "2026-11-11T12:00:00+08:00",
+  "words": [
+    {
+      "word": "ONE",
+      "start": 0.0,
+      "end": 0.3,
+      "verified": false
+    },
+    {
+      "word": "MORE",
+      "start": 0.3,
+      "end": 0.6,
+      "verified": false
+    },
+    {
+      "word": "SHOT",
+      "start": 0.6,
+      "end": 0.8999999999999999,
+      "verified": false
+    }
+  ]
+}
