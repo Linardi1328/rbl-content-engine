@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
 
+from .production.finishing import REPORT, read_json, require, sha256
 from .production.video_job import (
     EXPECTED_MODEL,
     plan_identity,
@@ -79,7 +80,14 @@ def evaluate_customer_zero(
     post_manifest_path: Path,
     publication_receipt_path: Path,
     human_confirmed_real_content: bool,
+    finishing_report_path: Path | None = None,
 ) -> dict[str, Any]:
+    """Check a recorded real-content workflow without network calls or paid mutations.
+
+    Preserve the existing human-confirmation and exact-asset publication gates.
+    When a finishing report is supplied or detected, also verify its upstream
+    hashes and the finished bytes approved for every enabled platform.
+    """
     checks: list[AcceptanceCheck] = []
 
     content = _read_json(content_package_path)
@@ -347,6 +355,38 @@ def evaluate_customer_zero(
         + (f": {manifest_error}" if manifest_error else ""),
     )
 
+    # Existing silent-only acceptance remains compatible. A job-side finishing
+    # report is automatically enforced, including when the caller omits the flag.
+    automatic_report = generation_state_path.parent / REPORT
+    selected_report = finishing_report_path or (automatic_report if automatic_report.exists() else None)
+    if selected_report is not None:
+        finishing_error = None
+        try:
+            finished = read_json(selected_report)
+            require(finished.get("job_id") == job_id and finished.get("technical_qc") == "PASS" and
+                    finished.get("status") == "PENDING_HUMAN_REVIEW" and
+                    finished.get("publication_status") == "BLOCKED_PENDING_HUMAN_REVIEW",
+                    "Finishing QC/job/review gate mismatch")
+            final = finished["final_video"]
+            require(sha256(resolve_recorded_path(final["local_path"])) == final["sha256"],
+                    "Finished final bytes changed")
+            expected_inputs = {
+                "content_package": content_package_path, "storyboard": storyboard_path,
+                "plan": media_plan_path, "generation_state": generation_state_path,
+            }
+            for key, path in expected_inputs.items():
+                require(finished["inputs"][key]["sha256"] == sha256(path), "Finishing upstream lineage changed")
+            for item in finished["inputs"].values():
+                require(sha256(resolve_recorded_path(item["path"])) == item["sha256"], "Finishing input bytes changed")
+            require(manifest_ok and all(manifest["approval"]["asset_sha256"][platform] == final["sha256"]
+                                        for platform in enabled_platforms),
+                    "Every approved platform export must match the exact finished bytes")
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            finishing_error = str(exc)
+        _record(checks, "social_finishing_lineage", finishing_error is None,
+                "Finished bytes preserve upstream lineage and match exact Phase 5 approved exports",
+                finishing_error or "Finishing lineage failed")
+
     receipt_platforms = receipt.get("platforms")
     receipt_base_ok = (
         receipt.get("post_id") == job_id
@@ -442,6 +482,7 @@ def evaluate_customer_zero(
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Define offline acceptance inputs and the explicit real-content confirmation flag."""
     parser = argparse.ArgumentParser(
         description="Evaluate one real RBL V1 Customer Zero end-to-end acceptance run"
     )
@@ -451,6 +492,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--generation-state", type=Path, required=True)
     parser.add_argument("--post-manifest", type=Path, required=True)
     parser.add_argument("--publication-receipt", type=Path, required=True)
+    parser.add_argument("--finishing-report", type=Path)
     parser.add_argument(
         "--human-confirmed-real-content",
         action="store_true",
@@ -460,6 +502,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Print the acceptance report and return a failing exit code unless all gates pass."""
     args = build_parser().parse_args()
     result = evaluate_customer_zero(
         content_package_path=args.content_package,
@@ -469,6 +512,7 @@ def main() -> int:
         post_manifest_path=args.post_manifest,
         publication_receipt_path=args.publication_receipt,
         human_confirmed_real_content=args.human_confirmed_real_content,
+        finishing_report_path=args.finishing_report,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0 if result["status"] == PASS else 1
